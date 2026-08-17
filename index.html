@@ -1,0 +1,2478 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shade Sail Simulator v6.3 — 3D Garden Shadow Planner</title>
+<meta name="description" content="Free browser-based 3D simulator for planning shade sail (Sonnensegel) placement. Visualize sun position, shadow casting, and sail orientation for any location, date, and time. No install required.">
+<meta name="keywords" content="shade sail simulator, Sonnensegel Planer, garden shadow planner, 3D sun simulator, shade sail planner, shadow calculator garden, Sonnensegel berechnen, sail orientation tool, garden planning tool, sun position calculator">
+<meta name="author" content="Alexander Zabelyshenskiy">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://nomiknomik.github.io/shade-sail-simulator/">
+<!-- Open Graph (Facebook, LinkedIn, WhatsApp) -->
+<meta property="og:title" content="Shade Sail Simulator — 3D Garden Shadow Planner">
+<meta property="og:description" content="Plan shade sail placement in your garden with accurate 3D shadow simulation. Free, browser-based, no install needed.">
+<meta property="og:image" content="https://nomiknomik.github.io/shade-sail-simulator/screenshots/social-preview.png">
+<meta property="og:url" content="https://nomiknomik.github.io/shade-sail-simulator/">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="en_US">
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Shade Sail Simulator — 3D Garden Shadow Planner">
+<meta name="twitter:description" content="Free 3D tool to plan shade sail placement — sun position, shadow area, sail orientation for any location & time.">
+<meta name="twitter:image" content="https://nomiknomik.github.io/shade-sail-simulator/screenshots/social-preview.png">
+<style>
+  :root{ --bg:#0f2417; --panel:#1a3c2b; --panel-2:#24523d; --line:#4a7c59; --text:#f4f1e6; --muted:#a8c5b5; --sun:#ffb81c; --ref:#d4a017; }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text)}
+  #app{display:flex;height:100vh;overflow:hidden}
+  #panel{width:344px;min-width:344px;height:100%;overflow-y:auto;background:var(--panel);border-right:1px solid var(--line);padding-bottom:50px}
+  #panel header{padding:16px 18px 12px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:3}
+  #panel header h1{margin:0;font-size:16px}
+  #panel header h1 a{color:var(--text);text-decoration:none}
+  #panel header h1 a:hover{color:var(--sun);text-decoration:underline}
+  #panel footer{padding:14px 18px;font-size:11px;color:var(--muted);line-height:1.6}
+  #panel footer a{color:var(--ref);text-decoration:none}
+  #panel footer a:hover{text-decoration:underline}
+  #panel header .ver{font-size:11px;color:var(--muted);margin-top:2px}
+  #panel header .langbar{display:flex;gap:4px;margin-top:8px}
+  #panel header .langbar button{background:var(--panel-2);border:1px solid var(--line);color:var(--muted);border-radius:5px;padding:3px 9px;font-size:12px;cursor:pointer;font-weight:600}
+  #panel header .langbar button.active{background:var(--sun);color:#1a1206;border-color:var(--sun)}
+  .group{border-bottom:1px solid var(--line);padding:14px 18px}
+  .group h2{margin:0 0 4px;font-size:12px;text-transform:uppercase;letter-spacing:.8px;color:var(--sun);font-weight:600;cursor:pointer;display:flex;justify-content:space-between;align-items:center}
+  .group h2::after{content:'▼';font-size:10px;color:var(--muted)}
+  .group.collapsed h2::after{content:'▶'}
+  .group.collapsed > :not(h2){display:none}
+  .group .hint{font-size:11px;color:var(--muted);margin:0 0 8px;line-height:1.5}
+  .row{display:flex;align-items:center;gap:6px;margin:6px 0}
+  .row label{flex:0 0 96px;font-size:13px;color:var(--muted)}
+  .row input[type=range]{flex:1;accent-color:var(--sun);height:3px;min-width:40px}
+  .num{width:58px;background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:4px 5px;font-size:12px}
+  .unit{width:14px;font-size:11px;color:var(--muted)}
+  .val{width:60px;text-align:right;font-size:12px;font-variant-numeric:tabular-nums}
+  .row input[type=date]{flex:1;background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:4px 6px;font-size:12px}
+  .row select{flex:1;background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:5px 6px;font-size:12px}
+  .row input[type=color]{width:36px;height:26px;padding:0;border:1px solid var(--line);border-radius:6px;background:var(--panel-2)}
+  .row input[type=time]{background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:4px 6px;font-size:12px}
+  .card{background:var(--panel-2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:8px 0}
+  .card h3{margin:0 0 6px;font-size:11px;color:var(--text);font-weight:600;display:flex;justify-content:space-between;align-items:center}
+  .btn{background:var(--sun);color:#1a1206;border:none;border-radius:7px;padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer}
+  .btn.secondary{background:var(--panel-2);color:var(--text);border:1px solid var(--line)}
+  .btn:active{transform:translateY(1px)}
+  .minib{background:var(--panel);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:4px 10px;font-size:13px;cursor:pointer;margin-right:4px}
+  .minib:active{transform:translateY(1px)}
+  .seg{display:flex;gap:4px;margin:4px 0 8px}
+  .seg button{flex:1;background:var(--panel-2);border:1px solid var(--line);color:var(--muted);border-radius:6px;padding:5px;font-size:11px;cursor:pointer}
+  .seg button.active{background:var(--sun);color:#1a1206;border-color:var(--sun);font-weight:600}
+  .readout{font-size:12px;color:var(--muted);line-height:1.7}
+  .readout b{color:var(--text);font-variant-numeric:tabular-nums}
+  .legend{font-size:11px;color:var(--muted);line-height:1.7}
+  .dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:middle}
+  #stage{flex:1;position:relative}
+  #stage canvas{display:block}
+  #hud{position:absolute;left:14px;bottom:14px;background:rgba(17,22,28,.8);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:12px;backdrop-filter:blur(4px)}
+  #hud .night{color:var(--sun)}
+  #topleft{position:absolute;left:14px;top:14px;display:flex;flex-direction:column;gap:8px;max-width:280px;pointer-events:none}
+  #dayHud{background:rgba(17,22,28,.8);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:11px;backdrop-filter:blur(4px);line-height:1.6}
+  #dayHud:empty{display:none}
+  #dayHud b{color:var(--text);font-variant-numeric:tabular-nums}
+  #dayHud .dh-label{color:var(--sun);font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+  #dayHud .dh-rect{color:#f1c40f}
+  #histHud{display:flex;gap:6px;pointer-events:auto}
+  #histHud button{background:rgba(17,22,28,.8);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:6px 13px;font-size:15px;line-height:1;cursor:pointer;backdrop-filter:blur(4px)}
+  #histHud button:hover:not(:disabled){border-color:var(--sun);color:var(--sun)}
+  #histHud button:disabled{opacity:.35;cursor:default}
+  @keyframes card-flash{ 0%{box-shadow:0 0 0 2px var(--sun)} 100%{box-shadow:none} }
+  .card.highlight{ animation:card-flash .9s ease-out forwards }
+  .group.highlight{ animation:card-flash .9s ease-out forwards }
+  @keyframes row-flash{ 0%{background:rgba(244,169,60,.35);box-shadow:0 0 0 2px var(--sun)} 100%{background:transparent;box-shadow:none} }
+  .row.highlight{ animation:row-flash 1.2s ease-out forwards;border-radius:6px }
+  #toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(20,30,40,.92);color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;z-index:500;pointer-events:none;max-width:440px;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.5);display:none;transition:opacity .3s}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="panel">
+    <header>
+      <h1 id="h-title"><a href="https://github.com/nomiknomik/shade-sail-simulator" target="_blank" rel="noopener">Shade Sail Simulator</a></h1>
+      <div class="ver">Version 6.3 · EN · Objects placeable across the garden (boundaries grow with garden size) · Posts draggable with wall-snap · Leaner hints</div>
+      <div class="langbar">
+        <button id="lang-en" class="active" onclick="setLang('en')">EN</button>
+      </div>
+    </header>
+
+    <div class="group collapsed">
+      <h2 data-i18n="sec-data"></h2>
+      <div class="row" style="gap:6px">
+        <button class="btn secondary" id="btnExport" style="flex:1" data-i18n="btn-export"></button>
+        <button class="btn secondary" id="btnImport" style="flex:1" data-i18n="btn-import"></button>
+        <button class="btn secondary" id="btnReset" style="flex:0 0 64px" data-i18n="btn-reset"></button>
+      </div>
+      <p class="hint" id="saveState" data-i18n="hint-save"></p>
+      <input id="fileImport" type="file" accept="application/json" hidden>
+    </div>
+
+    <div class="group collapsed" id="group-garden">
+      <h2 data-i18n="sec-garden"></h2>
+      <div class="row"><label data-i18n="lbl-width"></label><input id="gw" type="range" min="3" max="100" step="0.5"><input id="gwn" class="num" type="text" inputmode="decimal"><span class="unit">m</span></div>
+      <div class="row"><label data-i18n="lbl-depth"></label><input id="gd" type="range" min="3" max="100" step="0.5"><input id="gdn" class="num" type="text" inputmode="decimal"><span class="unit">m</span></div>
+      <div class="row" id="row-wall-x0"><label data-i18n="lbl-wall-x0"></label><input id="wx0" type="range" min="0" max="7" step="0.1"><input id="wx0n" class="num" type="text" inputmode="decimal"><span class="unit">m</span></div>
+      <div class="row" id="row-wall-xb"><label data-i18n="lbl-wall-xb"></label><input id="wxb" type="range" min="0" max="7" step="0.1"><input id="wxbn" class="num" type="text" inputmode="decimal"><span class="unit">m</span></div>
+      <div class="row" id="row-wall-y0"><label data-i18n="lbl-wall-y0"></label><input id="wy0" type="range" min="0" max="7" step="0.1"><input id="wy0n" class="num" type="text" inputmode="decimal"><span class="unit">m</span></div>
+      <div class="row" id="row-wall-yt"><label data-i18n="lbl-wall-yt"></label><input id="wyt" type="range" min="0" max="7" step="0.1"><input id="wytn" class="num" type="text" inputmode="decimal"><span class="unit">m</span></div>
+      <div class="row"><label data-i18n="lbl-wall-opacity"></label><input id="wallop" type="range" min="0.1" max="1" step="0.05"><input id="wallopn" class="num" type="text" inputmode="decimal"></div>
+      <div class="row"><label data-i18n="lbl-north"></label><input id="north" type="range" min="0" max="360" step="1"><input id="northn" class="num" type="text" inputmode="decimal"><span class="unit">°</span></div>
+      <p class="hint" data-i18n="hint-walls"></p>
+    </div>
+
+    <div class="group collapsed">
+      <h2 data-i18n="sec-location"></h2>
+      <div class="row"><label data-i18n="lbl-city"></label>
+        <select id="city">
+          <option value="">Select a city</option>
+          <option value="-33.8688,151.2093">Sydney</option>
+          <option value="-37.8136,144.9631">Melbourne</option>
+          <option value="-27.4698,153.0251">Brisbane</option>
+          <option value="-31.9505,115.8605">Perth</option>
+          <option value="-34.9285,138.6007">Adelaide</option>
+          <option value="-35.2809,149.1300">Canberra</option>
+          <option value="-12.4634,130.8456">Darwin</option>
+          <option value="-42.8821,147.3272">Hobart</option>
+          <option value="-28.0167,153.4000">Gold Coast</option>
+          <option value="-32.9283,151.7817">Newcastle</option>
+        </select>
+      </div>
+      <div class="row"><label data-i18n="lbl-lat"></label><input id="lat" type="text" inputmode="decimal" class="num" style="width:auto;flex:1"></div>
+      <div class="row"><label data-i18n="lbl-lon"></label><input id="lon" type="text" inputmode="decimal" class="num" style="width:auto;flex:1"></div>
+      <div class="row"><label data-i18n="lbl-date"></label><input id="date" type="date"></div>
+      <div class="row"><label data-i18n="lbl-time"></label><input id="time" type="range" min="0" max="1439" step="5"><input id="timeInput" type="time"></div>
+      <div class="row" style="gap:8px">
+        <button class="btn" id="play" style="flex:1" data-i18n="btn-play"></button>
+        <button class="btn secondary" id="now" style="flex:0 0 64px" data-i18n="btn-now"></button>
+      </div>
+    </div>
+
+    <div class="group collapsed">
+      <h2 data-i18n="sec-posts"></h2>
+      <p class="hint" data-i18n="hint-posts"></p>
+      <div class="row"><label data-i18n="lbl-postlabels"></label><input id="showPostLabels" type="checkbox" style="accent-color:var(--sun)"><span class="unit" style="width:auto;color:var(--muted)" data-i18n="hint-postlabels-3d"></span></div>
+      <div class="row"><label data-i18n="lbl-dims"></label><input id="showDims" type="checkbox" style="accent-color:var(--sun)"><span class="unit" style="width:auto;color:var(--muted)" data-i18n="hint-dims-3d"></span></div>
+      <div id="points"></div>
+    </div>
+
+    <div class="group collapsed">
+      <h2 data-i18n="sec-sails"></h2>
+      <p class="hint" data-i18n="hint-sails"></p>
+      <div id="sails"></div>
+      <div style="margin-top:8px">
+        <button class="btn" id="btnFitSails" style="width:100%" data-i18n="btn-fit-sails"></button>
+      </div>
+      <div style="margin-top:6px">
+        <button class="btn secondary" id="btnOptimizePosts" style="width:100%" data-i18n="btn-optimize-posts"></button>
+      </div>
+      <div style="margin-top:6px">
+        <button class="btn secondary" id="btnOptimizeSails" style="width:100%" data-i18n="btn-optimize-shading"></button>
+      </div>
+      <label style="display:flex;align-items:center;gap:6px;margin-top:4px;font-size:0.85em;cursor:pointer">
+        <input type="checkbox" id="chkFreePosts"> <span data-i18n="lbl-free-posts"></span>
+      </label>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:0.85em">
+        <label data-i18n="lbl-opt-model" style="white-space:nowrap"></label>
+        <select id="selOptModel" style="flex:1;min-width:0">
+          <option value="greedy-v6" data-i18n="opt-model-greedy"></option>
+          <option value="kepler" data-i18n="opt-model-kepler"></option>
+          <option value="gauss" data-i18n="opt-model-gauss"></option>
+          <option value="darwin" data-i18n="opt-model-darwin"></option>
+          <option value="boltzmann" data-i18n="opt-model-boltzmann"></option>
+        </select>
+      </div>
+      <div id="optModelDesc" class="readout" style="margin-top:4px;font-size:11px"></div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:4px;font-size:0.85em">
+        <label data-i18n="lbl-opt-tol" style="white-space:nowrap"></label>
+        <input type="number" id="numOptTol" min="0" max="20" step="0.5" style="width:64px"><span class="unit">m²·h</span>
+      </div>
+      <p class="hint" data-i18n="hint-optimize-sails"></p>
+    </div>
+
+    <div class="group collapsed">
+      <h2 data-i18n="sec-furniture"></h2>
+      <p class="hint" data-i18n="hint-furniture"></p>
+      <div id="furniture"></div>
+    </div>
+
+    <div class="group collapsed">
+      <h2 data-i18n="sec-person"></h2>
+      <p class="hint" data-i18n="hint-person"></p>
+      <div id="person"></div>
+    </div>
+
+    <div class="group collapsed">
+      <h2 data-i18n="sec-shadow"></h2>
+      <div class="row"><label data-i18n="lbl-showshadow"></label><input id="showShadow" type="checkbox" checked style="accent-color:var(--sun)"></div>
+      <div class="readout" id="shadowReadout"></div>
+    </div>
+    <div class="group collapsed">
+      <h2 data-i18n="sec-dayshade"></h2>
+      <p class="hint" data-i18n="hint-dayshade"></p>
+      <div class="row"><label data-i18n="lbl-analysis-from"></label><input id="analysisStart" type="time" style="flex:1;background:var(--panel);color:var(--fg);border:1px solid var(--border);border-radius:4px;padding:2px 4px"></div>
+      <div class="row"><label data-i18n="lbl-analysis-to"></label><input id="analysisEnd" type="time" style="flex:1;background:var(--panel);color:var(--fg);border:1px solid var(--border);border-radius:4px;padding:2px 4px"></div>
+      <div class="readout" id="dayShade"></div>
+      <div class="row" style="margin-top:8px">
+        <label data-i18n="lbl-eval-on"></label>
+        <input id="evalRectOn" type="checkbox" style="accent-color:var(--sun)">
+      </div>
+      <div id="evalRectInputs">
+        <div class="row"><label data-i18n="lbl-eval-cx"></label><input id="evalCx" class="num" type="text" inputmode="decimal" style="width:auto;flex:1"><span class="unit">m</span></div>
+        <div class="row"><label data-i18n="lbl-eval-cy"></label><input id="evalCy" class="num" type="text" inputmode="decimal" style="width:auto;flex:1"><span class="unit">m</span></div>
+        <div class="row"><label data-i18n="lbl-eval-w"></label><input id="evalW" class="num" type="text" inputmode="decimal" style="width:auto;flex:1"><span class="unit">m</span></div>
+        <div class="row"><label data-i18n="lbl-eval-h"></label><input id="evalH" class="num" type="text" inputmode="decimal" style="width:auto;flex:1"><span class="unit">m</span></div>
+      </div>
+      <p class="hint" data-i18n="rect-hint"></p>
+    </div>
+    <div class="group collapsed"><h2 data-i18n="sec-sun"></h2><div class="readout" id="sunReadout"></div></div>
+    <div class="group collapsed"><h2 data-i18n="sec-legend"></h2>
+      <div class="legend" id="legendText"></div>
+    </div>
+    <footer>
+      © 2026 PremiereTie
+      <a href="https://github.com/nomiknomik/shade-sail-simulator/blob/main/LICENSE.md" target="_blank" rel="noopener" data-i18n="footer-license"></a><br>
+      <a href="https://github.com/nomiknomik/shade-sail-simulator" target="_blank" rel="noopener">GitHub Repository</a>
+    </footer>
+  </aside>
+  <main id="stage"><div id="hud"></div>
+    <div id="topleft">
+      <div id="dayHud"></div>
+      <div id="histHud">
+        <button id="undoBtn" data-i18n-title="btn-undo">↩</button>
+        <button id="redoBtn" data-i18n-title="btn-redo">↪</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="https://unpkg.com/suncalc@1.9.0/suncalc.js"></script>
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" }}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const DEG=Math.PI/180;
+/* Reiner Anzeige-Offset für den blauen Nordpfeil (beeinflusst NICHT die Sonnen-/Schattenberechnung).
+   Math.PI (180°) dreht den Pfeil so, dass er korrekt zum geografischen Norden zeigt. */
+const NORTH_VIS_OFFSET=Math.PI;
+const STORE_KEY='sonnensegel-v7';
+const POST_BASE=['#1b5e20','#2e7d32','#4caf50','#c9a227','#f4d03f','#b8860b'];
+function postColor(i){ if(i<POST_BASE.length) return POST_BASE[i]; return `hsl(${((i-POST_BASE.length)*60)%360},65%,45%)`; }
+const num=(v,def)=>{ v=+v; return isNaN(v)?def:v; };
+
+/* ============================================================
+   HARDWARE CATALOG
+   ============================================================ */
+const TURNBUCKLE_TYPES=['Jaw & Jaw','Eye & Eye','Jaw & Eye'];
+const TURNBUCKLE_SIZES=[
+  { size:'6mm',  length:0.100 },
+  { size:'8mm',  length:0.120 },
+  { size:'10mm', length:0.150 },
+  { size:'12mm', length:0.200 },
+  { size:'16mm', length:0.250 },
+  { size:'20mm', length:0.300 },
+  { size:'22mm', length:0.306 },
+  { size:'24mm', length:0.350 },
+  { size:'28mm', length:0.360 },
+  { size:'32mm', length:0.400 }
+];
+
+const HARDWARE={
+  shackles:[
+    { type:'None', length:0 },
+    { type:'6mm Bow Shackle', length:0.025 },
+    { type:'8mm Bow Shackle', length:0.035 },
+    { type:'10mm Bow Shackle', length:0.045 },
+    { type:'12mm Bow Shackle', length:0.055 }
+  ],
+  turnbuckles:TURNBUCKLE_TYPES.flatMap(t=>TURNBUCKLE_SIZES.map(s=>({ type:`${t} ${s.size}`, length:s.length })))
+};
+
+function findHardware(kind,type){
+  const item=(HARDWARE[kind]||[]).find(x=>x.type===type);
+  return item?{...item}:HARDWARE[kind][0];
+}
+
+/* ============================================================
+   TRANSLATIONS
+   ============================================================ */
+const TRANSLATIONS = {
+  de: {
+    'page-title': 'Sonnensegel-Simulator',
+    'sec-data': 'Daten',
+    'sec-garden': 'Garten',
+    'sec-location': 'Standort & Zeit',
+    'sec-posts': 'Pfosten',
+    'sec-sails': 'Segel',
+    'sec-furniture': 'Möbel',
+    'sec-shadow': 'Schatten',
+    'sec-dayshade': 'Tagesauswertung',
+    'sec-sun': 'Sonne',
+    'sec-legend': 'Legende',
+    'btn-export': '⬇ Export',
+    'btn-import': '⬆ Import',
+    'btn-reset': 'Reset',
+    'btn-play': '▶ Tag abspielen',
+    'btn-pause': '⏸ Pause',
+    'btn-now': 'Jetzt',
+    'btn-undo': 'Rückgängig (Strg+Z)',
+    'btn-redo': 'Wiederholen (Strg+Y)',
+    'btn-drawrect': '▣ Bereich aufziehen',
+    'btn-clearrect': 'Bereich löschen',
+    'btn-optimize-posts': '🔍 Pfosten-Zuweisung optimieren',
+    'lbl-eval-on':   'Bereich aktiv',
+    'lbl-eval-cx':   'Mitte X',
+    'lbl-eval-cy':   'Mitte Y',
+    'lbl-eval-w':    'Breite',
+    'lbl-eval-h':    'Tiefe',
+    'rect-hint':     'Mittelpunkt und Maße des Auswertungsbereichs eingeben.',
+    'dayshade-rect': 'Im Rechteck',
+    'hint-save': 'Automatisches Speichern im Browser. Doppelklick auf einen Schieber = Default. Segel & Möbel lassen sich im 3D mit der Maus verschieben.',
+    'hint-walls': 'Vier Wände einzeln einstellbar (0 m = keine Wand). Bezugspunkt fest auf Ecke 3 (+X/+Y).',
+    'hint-posts': '6 Pfosten in festen Farben. X/Y relativ zum Bezugspunkt, Höhe absolut ab Boden. Im 3D mit der Maus ziehen – bei „frei platzieren" aus snappen sie an die Wand.',
+    'hint-labels-3d': 'Labels & Maße im 3D anzeigen',
+    'lbl-postlabels': 'Pfosten-Labels',
+    'hint-postlabels-3d': 'Pfosten & Möbel beschriften',
+    'lbl-dims': 'Maße',
+    'hint-dims-3d': 'Maßketten anzeigen',
+    'hint-sails': 'Feste Maße je Segel (als Zahl eingeben). Im 3D mit der Maus ziehen. ⟲/⟳ dreht die Aufhängung.',
+    'hint-furniture': 'Im 3D mit der Maus in der Ebene verschiebbar.',
+    'hint-dayshade': 'Über den Tag (10–18 Uhr) integrierte Bodenschattenfläche je aktivem Segel – in m²·h. Steckt auch im JSON-Export.',
+    'hint-sail-note': 'Mit der Maus zwischen die Pfosten ziehen. Seillängen = kürzeste Verbindung Ecke→Pfosten.',
+    'lbl-width': 'Breite',
+    'lbl-depth': 'Tiefe',
+    'lbl-wall-x0': 'Rechts (X=0)',
+    'lbl-wall-xb': 'Links (X=−B)',
+    'lbl-wall-y0': 'Hinten (Y=0)',
+    'lbl-wall-yt': 'Vorne (Y=−D)',
+    'lbl-wall-opacity': 'Wand-Deckkraft',
+    'lbl-north': 'Norden °',
+    'lbl-city': 'Ort',
+    'city-manual': '— eigene Koordinaten —',
+    'lbl-lat': 'Breitengrad',
+    'lbl-lon': 'Längengrad',
+    'lbl-date': 'Datum',
+    'lbl-time': 'Uhrzeit',
+    'lbl-labels': 'Beschriftung',
+    'lbl-showshadow': 'Fläche zeigen',
+    'post-label': 'Pfosten',
+    'sail-label': 'Segel',
+    'lbl-height': 'Höhe',
+    'lbl-x': 'X',
+    'lbl-y': 'Y',
+    'lbl-side-a': 'Seite a',
+    'lbl-side-b': 'Seite b',
+    'lbl-side-c': 'Seite c',
+    'lbl-bw': 'Breite',
+    'lbl-bl': 'Länge',
+    'lbl-3corners': '3 Ecken',
+    'lbl-4corners': '4 Ecken',
+    'lbl-corner-n': 'Ecke',
+    'lbl-rotate': 'Drehen',
+    'lbl-sail-rot': 'Drehwinkel',
+    'lbl-color': 'Farbe',
+    'lbl-opacity': 'Deckkraft',
+    'lbl-active': 'aktiv',
+    'lbl-visible': 'sichtbar',
+    'lbl-center': 'Mitte',
+    'lbl-yaw': 'Drehung',
+    'furn-table': 'Tisch',
+    'furn-chair1': 'Stuhl 1',
+    'furn-chair2': 'Stuhl 2',
+    'furn-pergola': 'Pergola',
+    'perg-sides': 'Vertikaler Sonnenschutz (Seiten)',
+    'perg-front': 'Vorne',
+    'perg-back': 'Hinten',
+    'perg-left': 'Links',
+    'perg-right': 'Rechts',
+    'shadow-night': 'Nachts kein Schatten.',
+    'shadow-none': 'Keine Segel aktiv.',
+    'shadow-sail': 'Segel',
+    'shadow-shaded': '🟦 im Schatten',
+    'shadow-sun': '☀️ in der Sonne',
+    'dayshade-none': 'Kein aktives Segel.',
+    'dayshade-total': 'Gesamt',
+    'dayshade-overlap': 'Überlappung (verschwendet)',
+    'lbl-analysis-from': 'Auswertung von',
+    'lbl-analysis-to': 'bis',
+    'sun-alt': 'Höhe über Horizont',
+    'sun-az': 'Azimut (0°=N)',
+    'sun-status': 'Status',
+    'sun-day': 'Tag ☀️',
+    'sun-night': 'Nacht 🌙',
+    'legend-text': '<span class="dot" style="background:#8aa66a"></span>Boden <span class="dot" style="background:#2266dd"></span>→ Norden <span class="dot" style="background:#ffdd00"></span>→ Sonne <span class="dot" style="background:var(--ref)"></span>Bezugspunkt<br>Pfosten 1–6 in eigenen Farben.',
+    'footer-license': 'Lizenzbedingungen',
+    'import-ok': 'Import erfolgreich geladen.',
+    'import-err': '⚠️ Import fehlgeschlagen: ',
+    'reset-confirm': 'Alles auf Standard zurücksetzen?',
+    'hud-night': '· Nacht',
+    'rot-ccw': 'gegen Uhrzeigersinn',
+    'rot-cw': 'im Uhrzeigersinn',
+    'center-tip': 'zentriert zwischen die Pfosten',
+    'lbl-corner-ecke': 'Ecke',
+    'sec-person': 'Person',
+    'hint-person': 'Im 3D mit der Maus verschiebbar. Höhe als Zahleneingabe.',
+    'person-label': 'Person',
+    'lbl-person-h': 'Körpergröße',
+    'btn-fit-sails': '⛵ Segel an Pfosten anpassen',
+    'btn-optimize-shading': '🎯 Schatten optimieren',
+    'hint-optimize-sails': 'Optimiert Position, Drehung und Neigung jedes Segels für das eingegebene Datum (10–18 Uhr) auf maximale Netto-Beschattung der Sitzfläche; Pfosten werden danach an die Wände gesetzt. Übernahme nur bei Verbesserung.',
+    'lbl-free-posts': 'Pfosten frei platzieren',
+    'lbl-shackle': 'Schäkel',
+    'lbl-turnbuckle': 'Spannschloss',
+    'lbl-tension': 'Spann-/Spielreserve',
+    'hint-hardware': 'Schäkel + Spannschloss verkürzen die wirksame Segelkante.',
+    'fit-error-triangle': 'Pfostenabstände bilden kein gültiges Dreieck:',
+    'fit-ok': 'Segel an Pfosten angepasst.',
+    'opt-improved': '✅ Optimierung übernommen: Beschattung {a} statt {b} m²·h.',
+    'opt-reverted': 'ℹ️ Keine Verbesserung gefunden – bisherige Position beibehalten ({b} m²·h; beste Variante {a} m²·h).',
+    'lbl-opt-model': 'Modell:',
+    'lbl-opt-tol': 'ε-Toleranz:',
+    'opt-model-greedy': 'Greedy (v6.1) – Standard',
+    'opt-model-kepler': 'Kepler – Analytischer Seed',
+    'opt-model-gauss': 'Gauss – Gemeinsamer Abstieg',
+    'opt-model-darwin': 'Darwin – Differentielle Evolution',
+    'opt-model-boltzmann': 'Boltzmann – Simuliertes Abkühlen',
+  },
+  en: {
+    'page-title': 'Shade Sail Simulator',
+    'sec-data': 'Data',
+    'sec-garden': 'Garden',
+    'sec-location': 'Location & Time',
+    'sec-posts': 'Posts',
+    'sec-sails': 'Sails',
+    'sec-furniture': 'Furniture',
+    'sec-shadow': 'Shadow',
+    'sec-dayshade': 'Daily Analysis',
+    'sec-sun': 'Sun',
+    'sec-legend': 'Legend',
+    'btn-export': '⬇ Export',
+    'btn-import': '⬆ Import',
+    'btn-reset': 'Reset',
+    'btn-play': '▶ Play Day',
+    'btn-pause': '⏸ Pause',
+    'btn-now': 'Now',
+    'btn-undo': 'Undo (Ctrl+Z)',
+    'btn-redo': 'Redo (Ctrl+Y)',
+    'btn-drawrect': '▣ Draw area',
+    'btn-clearrect': 'Clear area',
+    'btn-optimize-posts': '🔍 Optimize post assignment',
+    'lbl-eval-on':   'Area active',
+    'lbl-eval-cx':   'Center X',
+    'lbl-eval-cy':   'Center Y',
+    'lbl-eval-w':    'Width',
+    'lbl-eval-h':    'Depth',
+    'rect-hint':     'Enter center point and dimensions of the evaluation area.',
+    'dayshade-rect': 'In rectangle',
+    'hint-save': 'Auto-saved in browser. Double-click a slider to reset to default. Sails & furniture can be dragged in 3D.',
+    'hint-walls': 'Four walls individually adjustable (0 m = no wall). Reference point fixed at Corner 3 (+X/+Y).',
+    'hint-posts': 'Add or remove posts as needed. X/Y relative to reference point, height absolute from ground. Drag in 3D – snaps to the wall unless "free placement" is on.',
+    'btn-add-post': '+ Add post',
+    'btn-remove-post': 'Remove',
+    'hint-labels-3d': 'Show labels & dimensions in 3D',
+    'lbl-postlabels': 'Post labels',
+    'hint-postlabels-3d': 'Label posts & furniture',
+    'lbl-dims': 'Dimensions',
+    'hint-dims-3d': 'Show dimension lines',
+    'hint-sails': 'Add or remove sails as needed. Drag in 3D. ⟲/⟳ rotates the suspension.',
+    'btn-add-sail': '+ Add sail',
+    'btn-remove-sail': 'Remove',
+    'hint-furniture': 'Can be dragged horizontally in the 3D view.',
+    'hint-dayshade': 'Ground shadow area integrated over the day (10–18h) per active sail – in m²·h. Also included in JSON export.',
+    'hint-sail-note': 'Drag between the posts. Rope lengths = shortest corner→post distance.',
+    'lbl-width': 'Width',
+    'lbl-depth': 'Depth',
+    'lbl-wall-x0': 'Right (X=0)',
+    'lbl-wall-xb': 'Left (X=−W)',
+    'lbl-wall-y0': 'Back (Y=0)',
+    'lbl-wall-yt': 'Front (Y=−D)',
+    'lbl-wall-opacity': 'Wall opacity',
+    'lbl-north': 'North °',
+    'lbl-city': 'Location',
+    'city-manual': '— custom coordinates —',
+    'lbl-lat': 'Latitude',
+    'lbl-lon': 'Longitude',
+    'lbl-date': 'Date',
+    'lbl-time': 'Time',
+    'lbl-labels': 'Labels',
+    'lbl-showshadow': 'Show area',
+    'post-label': 'Post',
+    'sail-label': 'Sail',
+    'lbl-height': 'Height',
+    'lbl-x': 'X',
+    'lbl-y': 'Y',
+    'lbl-side-a': 'Side a',
+    'lbl-side-b': 'Side b',
+    'lbl-side-c': 'Side c',
+    'lbl-bw': 'Width',
+    'lbl-bl': 'Length',
+    'lbl-3corners': '3 Corners',
+    'lbl-4corners': '4 Corners',
+    'lbl-corner-n': 'Corner',
+    'lbl-rotate': 'Rotate',
+    'lbl-sail-rot': 'Rotation angle',
+    'lbl-color': 'Color',
+    'lbl-opacity': 'Opacity',
+    'lbl-active': 'active',
+    'lbl-visible': 'visible',
+    'lbl-center': 'Center',
+    'lbl-yaw': 'Rotation',
+    'furn-table': 'Table',
+    'furn-chair': 'Chair',
+    'furn-chair1': 'Chair 1',
+    'furn-chair2': 'Chair 2',
+    'furn-pergola': 'Pergola',
+    'btn-add-furniture': '+ Add furniture',
+    'btn-remove-furniture': 'Remove',
+    'perg-sides': 'Vertical sun protection (sides)',
+    'perg-front': 'Front',
+    'perg-back': 'Back',
+    'perg-left': 'Left',
+    'perg-right': 'Right',
+    'shadow-night': 'No shadow at night.',
+    'shadow-none': 'No sails active.',
+    'shadow-sail': 'Sail',
+    'shadow-shaded': '🟦 in shade',
+    'shadow-sun': '☀️ in sun',
+    'dayshade-none': 'No active sail.',
+    'dayshade-total': 'Total',
+    'dayshade-overlap': 'Overlap (wasted)',
+    'lbl-analysis-from': 'Analysis from',
+    'lbl-analysis-to': 'to',
+    'sun-alt': 'Altitude',
+    'sun-az': 'Azimuth (0°=N)',
+    'sun-status': 'Status',
+    'sun-day': 'Day ☀️',
+    'sun-night': 'Night 🌙',
+    'legend-text': '<span class="dot" style="background:#8aa66a"></span>Ground <span class="dot" style="background:#2266dd"></span>→ North <span class="dot" style="background:#ffdd00"></span>→ Sun <span class="dot" style="background:var(--ref)"></span>Reference Point<br>Posts 1–6 in individual colors.',
+    'footer-license': 'License Terms',
+    'import-ok': 'Import loaded successfully.',
+    'import-err': '⚠️ Import failed: ',
+    'reset-confirm': 'Reset everything to default?',
+    'hud-night': '· Night',
+    'rot-ccw': 'counter-clockwise',
+    'rot-cw': 'clockwise',
+    'center-tip': 'center between posts',
+    'lbl-corner-ecke': 'Corner',
+    'sec-person': 'Person',
+    'hint-person': 'Drag in 3D view. Height via number input.',
+    'person-label': 'Person',
+    'lbl-person-h': 'Height',
+    'btn-fit-sails': '⛵ Fit Sail to Posts',
+    'btn-optimize-shading': '🎯 Optimize Shading',
+    'hint-optimize-sails': 'Optimizes each sail\'s position, rotation and tilt for the entered date (10–18h) for maximum net shading of the seating area; posts are then placed at the walls. Applied only if it improves the current layout.',
+    'lbl-free-posts': 'Place posts freely',
+    'lbl-shackle': 'Shackle',
+    'lbl-turnbuckle': 'Turnbuckle',
+    'lbl-tension': 'Tension / gap',
+    'hint-hardware': 'Shackle + turnbuckle reduce the effective sail edge.',
+    'fit-error-triangle': 'Post spacing does not form a valid triangle:',
+    'fit-ok': 'Sail fitted to posts.',
+    'opt-improved': '✅ Optimization applied: shading {a} instead of {b} m²·h.',
+    'opt-reverted': 'ℹ️ No improvement found – kept current layout ({b} m²·h; best variant {a} m²·h).',
+    'lbl-opt-model': 'Solver:',
+    'lbl-opt-tol': 'ε-tolerance:',
+    'opt-model-greedy': 'Quick Shade — fast local fit (default)',
+    'opt-model-kepler': 'Smart Start — geometry-based guess',
+    'opt-model-gauss': 'Smooth Tune — gradient refinement',
+    'opt-model-darwin': 'Swarm Search — population evolution',
+    'opt-model-boltzmann': 'Thermal Search — random cooling',
+    'opt-model-desc-greedy': 'Fastest option. Tries small tweaks around the current layout and keeps the best improvement.',
+    'opt-model-desc-kepler': 'Builds a good first layout from the post geometry, then lets the chosen solver refine it.',
+    'opt-model-desc-gauss': 'Follows the shading-score slope to carefully adjust position, rotation and tilt.',
+    'opt-model-desc-darwin': 'Maintains a population of layouts and evolves the best ones over several generations.',
+    'opt-model-desc-boltzmann': 'Randomly explores many layouts and slowly “cools” onto the highest-scoring one.',
+  },
+  ru: {
+    'page-title': 'Симулятор Тентового Паруса',
+    'sec-data': 'Данные',
+    'sec-garden': 'Сад',
+    'sec-location': 'Место & Время',
+    'sec-posts': 'Столбы',
+    'sec-sails': 'Паруса',
+    'sec-furniture': 'Мебель',
+    'sec-shadow': 'Тень',
+    'sec-dayshade': 'Суточный анализ',
+    'sec-sun': 'Солнце',
+    'sec-legend': 'Легенда',
+    'btn-export': '⬇ Экспорт',
+    'btn-import': '⬆ Импорт',
+    'btn-reset': 'Сброс',
+    'btn-play': '▶ Воспр. день',
+    'btn-pause': '⏸ Пауза',
+    'btn-now': 'Сейчас',
+    'btn-undo': 'Отменить (Ctrl+Z)',
+    'btn-redo': 'Повторить (Ctrl+Y)',
+    'btn-drawrect': '▣ Задать область',
+    'btn-clearrect': 'Удалить область',
+    'btn-optimize-posts': '🔍 Оптимизировать назначение столбов',
+    'lbl-eval-on':   'Область активна',
+    'lbl-eval-cx':   'Центр X',
+    'lbl-eval-cy':   'Центр Y',
+    'lbl-eval-w':    'Ширина',
+    'lbl-eval-h':    'Глубина',
+    'rect-hint':     'Укажите центр и размеры области оценки.',
+    'dayshade-rect': 'В прямоугольнике',
+    'hint-save': 'Автосохранение в браузере. Двойной клик по ползунку = сброс. Паруса и мебель можно перетаскивать в 3D.',
+    'hint-walls': 'Четыре стены регулируются отдельно (0 м = нет стены). Базовая точка зафиксирована на Угол 3 (+X/+Y).',
+    'hint-posts': '6 столбов в фиксированных цветах. X/Y относительно базовой точки, высота — от пола. Перетаскивайте в 3D — при выкл. «свободном размещении» прилипают к стене.',
+    'hint-labels-3d': 'Показать метки и размеры в 3D',
+    'lbl-postlabels': 'Метки столбов',
+    'hint-postlabels-3d': 'Метки столбов и мебели',
+    'lbl-dims': 'Размеры',
+    'hint-dims-3d': 'Показать размерные линии',
+    'hint-sails': 'Фиксированные размеры паруса (введите числом). Перетащить в 3D. ⟲/⟳ вращает подвес.',
+    'hint-furniture': 'Можно перетаскивать в 3D по горизонтали.',
+    'hint-dayshade': 'Интегрированная площадь тени (10–18ч) по каждому активному парусу – в м²·ч. Также включена в JSON-экспорт.',
+    'hint-sail-note': 'Перетащите между столбами. Длина верёвки = кратчайшее расстояние угол→столб.',
+    'lbl-width': 'Ширина',
+    'lbl-depth': 'Глубина',
+    'lbl-wall-x0': 'Справа (X=0)',
+    'lbl-wall-xb': 'Слева (X=−Ш)',
+    'lbl-wall-y0': 'Сзади (Y=0)',
+    'lbl-wall-yt': 'Спереди (Y=−Г)',
+    'lbl-wall-opacity': 'Прозрачность стен',
+    'lbl-north': 'Север °',
+    'lbl-city': 'Место',
+    'city-manual': '— свои координаты —',
+    'lbl-lat': 'Широта',
+    'lbl-lon': 'Долгота',
+    'lbl-date': 'Дата',
+    'lbl-time': 'Время',
+    'lbl-labels': 'Метки',
+    'lbl-showshadow': 'Показать область',
+    'post-label': 'Столб',
+    'sail-label': 'Парус',
+    'lbl-height': 'Высота',
+    'lbl-x': 'X',
+    'lbl-y': 'Y',
+    'lbl-side-a': 'Сторона a',
+    'lbl-side-b': 'Сторона b',
+    'lbl-side-c': 'Сторона c',
+    'lbl-bw': 'Ширина',
+    'lbl-bl': 'Длина',
+    'lbl-3corners': '3 угла',
+    'lbl-4corners': '4 угла',
+    'lbl-corner-n': 'Угол',
+    'lbl-rotate': 'Вращение',
+    'lbl-sail-rot': 'Угол поворота',
+    'lbl-color': 'Цвет',
+    'lbl-opacity': 'Прозрачность',
+    'lbl-active': 'активен',
+    'lbl-visible': 'видим',
+    'lbl-center': 'Центр',
+    'lbl-yaw': 'Поворот',
+    'furn-table': 'Стол',
+    'furn-chair1': 'Стул 1',
+    'furn-chair2': 'Стул 2',
+    'furn-pergola': 'Пергола',
+    'perg-sides': 'Вертикальная защита от солнца (стороны)',
+    'perg-front': 'Перед',
+    'perg-back': 'Зад',
+    'perg-left': 'Лево',
+    'perg-right': 'Право',
+    'shadow-night': 'Ночью тени нет.',
+    'shadow-none': 'Нет активных парусов.',
+    'shadow-sail': 'Парус',
+    'shadow-shaded': '🟦 в тени',
+    'shadow-sun': '☀️ на солнце',
+    'dayshade-none': 'Нет активных парусов.',
+    'dayshade-total': 'Итого',
+    'dayshade-overlap': 'Перекрытие (впустую)',
+    'lbl-analysis-from': 'Анализ с',
+    'lbl-analysis-to': 'до',
+    'sun-alt': 'Высота над горизонтом',
+    'sun-az': 'Азимут (0°=С)',
+    'sun-status': 'Статус',
+    'sun-day': 'День ☀️',
+    'sun-night': 'Ночь 🌙',
+    'legend-text': '<span class="dot" style="background:#8aa66a"></span>Земля <span class="dot" style="background:#2266dd"></span>→ Север <span class="dot" style="background:#ffdd00"></span>→ Солнце <span class="dot" style="background:var(--ref)"></span>Базовая точка<br>Столбы 1–6 в индивидуальных цветах.',
+    'footer-license': 'Условия лицензии',
+    'import-ok': 'Импорт загружен успешно.',
+    'import-err': '⚠️ Ошибка импорта: ',
+    'reset-confirm': 'Сбросить всё к настройкам по умолчанию?',
+    'hud-night': '· Ночь',
+    'rot-ccw': 'против часовой стрелки',
+    'rot-cw': 'по часовой стрелке',
+    'center-tip': 'центрировать между столбами',
+    'lbl-corner-ecke': 'Угол',
+    'sec-person': 'Человек',
+    'hint-person': 'Перетаскивается в 3D. Рост задаётся числом.',
+    'person-label': 'Человек',
+    'lbl-person-h': 'Рост',
+    'btn-fit-sails': '⛵ Подогнать парус к столбам',
+    'btn-optimize-shading': '🎯 Оптимизировать тень',
+    'hint-optimize-sails': 'Оптимизирует положение, поворот и наклон каждого паруса на введённую дату (10–18ч) для максимального затенения зоны отдыха; затем столбы ставятся у стен. Применяется только при улучшении.',
+    'lbl-free-posts': 'Свободное размещение стоек',
+    'lbl-shackle': 'Скоба',
+    'lbl-turnbuckle': 'Талреп',
+    'lbl-tension': 'Натяжение/зазор',
+    'hint-hardware': 'Скоба и талреп уменьшают эффективную сторону паруса.',
+    'fit-error-triangle': 'Расстояния между столбами не образуют треугольник:',
+    'fit-ok': 'Парус подогнан к столбам.',
+    'opt-improved': '✅ Оптимизация применена: затенение {a} вместо {b} м²·ч.',
+    'opt-reverted': 'ℹ️ Улучшение не найдено – сохранено текущее положение ({b} м²·ч; лучший вариант {a} м²·ч).',
+    'lbl-opt-model': 'Модель:',
+    'lbl-opt-tol': 'ε-допуск:',
+    'opt-model-greedy': 'Greedy (v6.1) – по умолчанию',
+    'opt-model-kepler': 'Kepler – аналитический сид',
+    'opt-model-gauss': 'Gauss – совместный спуск',
+    'opt-model-darwin': 'Darwin – дифференциальная эволюция',
+    'opt-model-boltzmann': 'Boltzmann – имитация отжига',
+  }
+};
+
+let currentLang = 'en';
+function t(key){ return TRANSLATIONS.en[key] || key; }
+
+function applyTranslations(){
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key=el.dataset.i18n;
+    if(key==='legend-text') el.innerHTML=t(key);
+    else el.textContent=t(key);
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach(el=>{ el.title=t(el.dataset.i18nTitle); });
+  document.getElementById('legendText').innerHTML=t('legend-text');
+  const b=document.getElementById('lang-en');
+  if(b) b.classList.add('active');
+  document.documentElement.lang='en';
+  document.title=t('page-title');
+}
+
+window.setLang=function(lang){
+  currentLang='en';
+  localStorage.setItem('shade-lang','en');
+  applyTranslations();
+  buildPointEditors();
+  buildSailEditors();
+  buildFurnitureEditors();
+  buildPersonEditor();
+  updateSun();
+  updateShadow(sunDir.y>0.02);
+  renderDayShade();
+};
+
+/* ============================================================
+   STATE
+   ============================================================ */
+function defaultState(){
+  const pt=(x,y,h)=>({x,y,h, shackle:HARDWARE.shackles[0], turnbuckle:HARDWARE.turnbuckles[0]});
+  return {
+    _pivotCorner:true,
+    garden:{ w:9.5, d:9.5, walls:{ x0:6.3, xb:2.4, y0:6.3, yt:2.4 }, wallOpacity:0.35, north:178 },
+    loc:{ lat:-33.8688, lon:151.2093 },
+    dateStr:new Date().toISOString().slice(0,10),
+    timeMin:845,
+    showPostLabels:true,
+    showDims:false,
+    ref:{ corner:2, ox:0, oy:0, oz:0 },
+    points:[
+      pt(0,    0,    2.9),
+      pt(-7,   0,    3  ),
+      pt(-9.5, 0,    3  ),
+      pt(-6.2, -9.5, 2.4),
+      pt(0,    -9.5, 2.4),
+      pt(2.5,  7.5,  3  ),
+    ],
+    sails:[
+      { on:true,  shape:3, bw:5.8, bl:3.6, a:5,   b:5,   c:7,   dx:0.35095352384828365,  dz:-0.3442153324172601,  rot:0, posts:[3,0,1], color:'#c0392b', opacity:0.6, tension:0.05 },
+      { on:true,  shape:3, bw:3,   bl:3,   a:3.6, b:3.6, c:5.1, dx:0.5073062153587451,   dz:-1.37376570489166,    rot:9, posts:[4,0,2], color:'#2c6fbb', opacity:1,   tension:0.05 },
+    ],
+    furniture:{
+      table:  { on:true, x:-2.479421015118292,    y:-4.848058999767439,    yaw:0,   tw:0.9, tl:1.58, th:0.74 },
+      chair1: { on:true, x:-2.9305071385166768,   y:-3.6133698799620877,   yaw:90  },
+      chair2: { on:true, x:-1.7993745567905344,   y:-3.606782007046153,    yaw:-90 },
+      pergola:{ on:true, x:-8.2,                  y:-3.7,                  yaw:0,   pw:2.9, pl:2.9, ph:2.4, sides:{front:false,back:false,left:false,right:false} },
+    },
+    person:{ on:true, x:-2.884993394138167, y:-6.996325351835675, h:1.9 },
+    evalRect:{ on:true, x0:-5.341978486241391, y0:-7.53476747154713, x1:-0.6114457664144224, y1:-0.5144782344699275 },
+    analysisStart:660, analysisEnd:900,  /* Auswertungsfenster: 660=11:00, 900=15:00 */
+    optimizer_freePosts:false,           /* Pfosten-Modus: false=Wand (Standard), true=frei */
+    optimizerModel:'greedy-v6',          /* gewähltes Optimierungsmodell (Dropdown) */
+    optimizerTolerance:2.0,              /* ε-Toleranz in m²·h: Ergebnisse innerhalb dieser Spanne gelten als gleich */
+  };
+}
+
+function migrate(st){
+  if(!st) return null;
+  const d=defaultState();
+  const hadWalls = st.garden && st.garden.walls && typeof st.garden.walls==='object';
+  const legacyWallH = (st.garden && typeof st.garden.wallH==='number') ? st.garden.wallH : null;
+  st.garden=Object.assign({},d.garden,st.garden||{});
+  if(!hadWalls){
+    const wh=(legacyWallH!=null)?legacyWallH:3;
+    st.garden.walls={ x0:wh, xb:wh, y0:wh, yt:wh };
+  } else {
+    st.garden.walls=Object.assign({},d.garden.walls,st.garden.walls);
+  }
+  delete st.garden.wallH;
+  if(typeof st.garden.wallOpacity!=='number'||st.garden.wallOpacity<0.05||st.garden.wallOpacity>1) st.garden.wallOpacity=1;
+  st.loc=Object.assign({},d.loc,st.loc||{});
+  st.ref={ corner:2, ox:0, oy:0, oz:0 };
+  if(!st.dateStr) st.dateStr=d.dateStr;
+  if(typeof st.timeMin!=='number') st.timeMin=d.timeMin;
+  /* alte showLabels-Flagge auf die beiden neuen Schalter übertragen */
+  if(typeof st.showPostLabels!=='boolean') st.showPostLabels=(typeof st.showLabels==='boolean')?st.showLabels:false;
+  if(typeof st.showDims!=='boolean') st.showDims=(typeof st.showLabels==='boolean')?st.showLabels:false;
+  delete st.showLabels;
+  if(!Array.isArray(st.points)||st.points.length===0) st.points=d.points;
+  st.points=st.points.map((p,i)=>{
+    const def=d.points[i]||{x:0,y:0,h:2.4,shackle:d.points[0].shackle,turnbuckle:d.points[0].turnbuckle};
+    return {
+      x:num(p&&p.x, def.x),
+      y:num(p&&p.y, def.y),
+      h:num(p&&p.h, def.h),
+      shackle: (p&&p.shackle && typeof p.shackle.type==='string') ? findHardware('shackles', p.shackle.type) : def.shackle,
+      turnbuckle: (p&&p.turnbuckle && typeof p.turnbuckle.type==='string') ? findHardware('turnbuckles', p.turnbuckle.type) : def.turnbuckle
+    };
+  });
+  if(!Array.isArray(st.sails)) st.sails=d.sails;
+  st.sails=st.sails.map((s,i)=>Object.assign({}, d.sails[i]||d.sails[0], s||{}));
+  st.sails.forEach(s=>{
+    if(typeof s.rot!=='number'||isNaN(s.rot)) s.rot=0;
+    if(typeof s.tension!=='number'||isNaN(s.tension)||s.tension<0) s.tension=0.05;
+  });
+  st.furniture=Object.assign({},d.furniture,st.furniture||{});
+  Object.keys(st.furniture).forEach(k=>{
+    const f=st.furniture[k]; if(!f||typeof f!=='object'){ delete st.furniture[k]; return; }
+    const type=furnType(k);
+    const def=d.furniture[k]||d.furniture[type]||furnDefaults(type);
+    st.furniture[k]=Object.assign({},def,f);
+    if(type==='pergola') st.furniture[k].sides=Object.assign({},def.sides,st.furniture[k].sides||{});
+  });
+  if(!st._pivotCorner){
+    Object.keys(st.furniture).forEach(k=>{
+      const f=st.furniture[k]; const type=furnType(k);
+      if(type==='table'){ f.x-=(f.tw||1.1)/2; f.y-=(f.tl||0.7)/2; }
+      if(type==='pergola'){ f.x-=(f.pw||3)/2; f.y-=(f.pl||3)/2; }
+    });
+    st._pivotCorner=true;
+  }
+  if(!st.person) st.person=d.person; else st.person=Object.assign({},d.person,st.person);
+  if(typeof st.person.h!=='number'||st.person.h<0.5) st.person.h=1.9;
+  st.evalRect=Object.assign({},d.evalRect,st.evalRect||{});
+  if(typeof st.evalRect.on!=='boolean') st.evalRect.on=false;
+  ['x0','y0','x1','y1'].forEach(k=>{ if(typeof st.evalRect[k]!=='number'||isNaN(st.evalRect[k])) st.evalRect[k]=0; });
+  if(typeof st.analysisStart!=='number'||st.analysisStart<0||st.analysisStart>1380) st.analysisStart=660;
+  if(typeof st.analysisEnd!=='number'||st.analysisEnd<60||st.analysisEnd>1440) st.analysisEnd=900;
+  if(st.analysisEnd<=st.analysisStart) st.analysisEnd=st.analysisStart+60;
+  if(typeof st.optimizer_freePosts!=='boolean') st.optimizer_freePosts=false;
+  if(['greedy-v6','kepler','gauss','darwin','boltzmann'].indexOf(st.optimizerModel)<0) st.optimizerModel='greedy-v6';
+  if(typeof st.optimizerTolerance!=='number'||isNaN(st.optimizerTolerance)||st.optimizerTolerance<0) st.optimizerTolerance=2.0;
+  return st;
+}
+
+let S=migrate(loadState())||defaultState();
+const DEF=defaultState();
+
+/* ---- Three.js ---- */
+const stage=document.getElementById('stage');
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFSoftShadowMap; stage.appendChild(renderer.domElement);
+const scene=new THREE.Scene(); scene.background=new THREE.Color(0xf3e9d2);
+const camera=new THREE.PerspectiveCamera(45,1,0.1,600); camera.position.set(13,12,17);
+const controls=new OrbitControls(camera,renderer.domElement); controls.enableDamping=true; controls.target.set(0,1.5,0);
+const hemi=new THREE.HemisphereLight(0xbfd6f0,0x6b7a55,0.55); scene.add(hemi);
+const sun=new THREE.DirectionalLight(0xfff4e0,2.2); sun.castShadow=true; sun.shadow.mapSize.set(2048,2048); scene.add(sun); scene.add(sun.target);
+let groundMesh,gridHelper,wallsGroup;
+const polesGroup=new THREE.Group(); scene.add(polesGroup);
+const ropesGroup=new THREE.Group(); scene.add(ropesGroup);
+const furnGroup=new THREE.Group(); scene.add(furnGroup);
+const personGroup=new THREE.Group(); scene.add(personGroup);
+const shadowGroup=new THREE.Group(); scene.add(shadowGroup);
+const evalRectGroup=new THREE.Group(); scene.add(evalRectGroup);
+const labelsGroup=new THREE.Group(); scene.add(labelsGroup);
+const northArrow=new THREE.ArrowHelper(new THREE.Vector3(0,0,-1),new THREE.Vector3(0,0.02,0),4,0x2266dd,0.9,0.5); scene.add(northArrow);
+const sunArrow=new THREE.ArrowHelper(new THREE.Vector3(1,0,0),new THREE.Vector3(0,0.08,0),2,0xffdd00,0.5,0.3); sunArrow.visible=false; scene.add(sunArrow);
+const refMarker=new THREE.Group();
+const refPin=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,0.6,8),new THREE.MeshStandardMaterial({color:0x22c3d6})); refPin.position.y=0.3;
+const refBall=new THREE.Mesh(new THREE.SphereGeometry(0.12,16,12),new THREE.MeshStandardMaterial({color:0x22c3d6,emissive:0x0a5560})); refBall.position.y=0.6;
+refMarker.add(refPin,refBall); scene.add(refMarker);
+let sailMeshes=[];
+function ensureSailMeshes(n){
+  while(sailMeshes.length<n){
+    const m=new THREE.Mesh(new THREE.BufferGeometry(),new THREE.MeshStandardMaterial({roughness:0.85,side:THREE.DoubleSide,transparent:true}));
+    m.castShadow=true; scene.add(m); sailMeshes.push(m);
+  }
+  while(sailMeshes.length>n){
+    const m=sailMeshes.pop(); scene.remove(m); m.geometry.dispose(); m.material.dispose();
+  }
+}
+let sunDir=new THREE.Vector3(0,1,0);
+let pergolaRoof=null;
+const raycaster=new THREE.Raycaster();
+
+/* ---- Geometrie ---- */
+function gardenCorners(){ const {w,d}=S.garden; return [new THREE.Vector3(-w/2,0,-d/2),new THREE.Vector3(w/2,0,-d/2),new THREE.Vector3(w/2,0,d/2),new THREE.Vector3(-w/2,0,d/2)]; }
+function refWorld(){ const c=gardenCorners()[S.ref.corner]; return new THREE.Vector3(c.x+S.ref.ox,S.ref.oz,c.z+S.ref.oy); }
+function poleTop(i){ const p=S.points[i]; const B=refWorld(); return new THREE.Vector3(B.x+p.x,p.h,B.z+p.y); }
+function sailLocalCorners(s){
+  if(s.shape===3){
+    const a=s.a,b=s.b,c=s.c; const Cx=(b*b-a*a+c*c)/(2*c); const Cz=Math.sqrt(Math.max(0,b*b-Cx*Cx));
+    const cx=(0+c+Cx)/3, cz=(0+0+Cz)/3;
+    return [[0,0],[c,0],[Cx,Cz]].map(([x,z])=>new THREE.Vector3(x-cx,0,z-cz));
+  }
+  const w=s.bw,l=s.bl;
+  return [ new THREE.Vector3(-w/2,0,-l/2),new THREE.Vector3(w/2,0,-l/2),new THREE.Vector3(w/2,0,l/2),new THREE.Vector3(-w/2,0,l/2) ];
+}
+function pointInPoly(p,poly){ let inside=false;
+  for(let i=0,j=poly.length-1;i<poly.length;j=i++){ const a=poly[i],b=poly[j];
+    if(((a.z>p.z)!==(b.z>p.z)) && (p.x<(b.x-a.x)*(p.z-a.z)/((b.z-a.z)||1e-9)+a.x)) inside=!inside; }
+  return inside; }
+function bestAngle2D(local,pg,G){ let sx=0,sc=0;
+  for(let k=0;k<local.length;k++){ const a=local[k],b={x:pg[k].x-G.x,z:pg[k].z-G.z};
+    sc+=a.x*b.x+a.z*b.z; sx+=a.x*b.z-a.z*b.x; }
+  return Math.atan2(sx,sc); }
+function cornerWeights(s,lx,lz){
+  if(s.shape===3){
+    const a=s.a,b=s.b,c=s.c;
+    const Cx=(b*b-a*a+c*c)/(2*c); const Cz=Math.sqrt(Math.max(0,b*b-Cx*Cx));
+    const cx=(0+c+Cx)/3, cz=(0+0+Cz)/3;
+    const A=[0-cx,0-cz], B=[c-cx,0-cz], C=[Cx-cx,Cz-cz];
+    const denom=(B[1]-C[1])*(A[0]-C[0])+(C[0]-B[0])*(A[1]-C[1])||1e-9;
+    const w0=((B[1]-C[1])*(lx-C[0])+(C[0]-B[0])*(lz-C[1]))/denom;
+    const w1=((C[1]-A[1])*(lx-C[0])+(A[0]-C[0])*(lz-C[1]))/denom;
+    return [w0,w1,1-w0-w1];
+  }
+  const w=s.bw, l=s.bl;
+  const u=(lx+w/2)/w, v=(lz+l/2)/l;
+  return [(1-u)*(1-v), u*(1-v), u*v, (1-u)*v];
+}
+function sailSurface(s){
+  const posts=s.posts.map(pi=>poleTop(pi));
+  const pg=posts.map(p=>({x:p.x,z:p.z})); const ys=posts.map(p=>p.y);
+  const G={x:pg.reduce((q,p)=>q+p.x,0)/pg.length, z:pg.reduce((q,p)=>q+p.z,0)/pg.length};
+  const local=sailLocalCorners(s).map(v=>({x:v.x,z:v.z}));
+  const ang=bestAngle2D(local,pg,G)+(s.rot||0)*DEG; const ca=Math.cos(ang),sa=Math.sin(ang);
+  const cornersAt=c=>local.map(v=>({x:c.x+v.x*ca-v.z*sa, z:c.z+v.x*sa+v.z*ca}));
+  const inside=c=>cornersAt(c).every(p=>pointInPoly(p,pg));
+  const off={x:s.dx||0,z:s.dz||0}; let center={x:G.x+off.x,z:G.z+off.z};
+  if(!inside(center)){ let lo=0,hi=1;
+    for(let i=0;i<26;i++){ const t=(lo+hi)/2; if(inside({x:G.x+off.x*t,z:G.z+off.z*t})) lo=t; else hi=t; }
+    center={x:G.x+off.x*lo, z:G.z+off.z*lo}; }
+  const lift=(lx,lz)=>{ const wx=center.x+lx*ca-lz*sa, wz=center.z+lx*sa+lz*ca;
+    const w=cornerWeights(s,lx,lz);
+    const y=w.reduce((sum,wi,i)=>sum+wi*ys[i],0);
+    return new THREE.Vector3(wx,y,wz); };
+  return { lift, posts, pg, ys, ang, center, G };
+}
+function sailCorners(s){ const surf=sailSurface(s); return sailLocalCorners(s).map(v=>surf.lift(v.x,v.z)); }
+
+function insetPoint(p,c,r){
+  const dx=c.x-p.x, dz=c.z-p.z;
+  const d=Math.hypot(dx,dz);
+  if(d<=r) return {x:c.x,z:c.z};
+  const t=r/d;
+  return {x:p.x+dx*t,z:p.z+dz*t};
+}
+function fitSailsToPosts(){
+  let changed=false;
+  S.sails.forEach((s,si)=>{
+    if(!s.on) return;
+    const n=s.shape;
+    const posts=s.posts.map(pi=>poleTop(pi));
+    const pg=posts.map(p=>({x:p.x,z:p.z}));
+    const G={x:pg.reduce((q,p)=>q+p.x,0)/n,z:pg.reduce((q,p)=>q+p.z,0)/n};
+    const h=s.posts.map(pi=>{
+      const p=S.points[pi];
+      return (p.shackle?p.shackle.length:0)+(p.turnbuckle?p.turnbuckle.length:0);
+    });
+    const tension=(s.tension!=null)?s.tension:0.05;
+    const T=pg.map((p,k)=>insetPoint(p,G,h[k]+tension));
+    const dT=[]; for(let k=0;k<n;k++) dT.push(Math.hypot(T[k].x-T[(k+1)%n].x,T[k].z-T[(k+1)%n].z));
+    if(n===3){
+      const [d01,d12,d20]=dT;
+      if(d01+d12<=d20 || d01+d20<=d12 || d12+d20<=d01){ showToast(t('fit-error-triangle')+' '+t('sail-label')+' '+(si+1)); return; }
+      s.c=d01; s.a=d12; s.b=d20;
+    } else {
+      s.bw=(dT[0]+dT[2])/2;
+      s.bl=(dT[1]+dT[3])/2;
+    }
+    const cT={x:T.reduce((q,p)=>q+p.x,0)/n,z:T.reduce((q,p)=>q+p.z,0)/n};
+    s.dx=cT.x-G.x; s.dz=cT.z-G.z; s.rot=0;
+    changed=true;
+  });
+  if(changed){
+    buildSailEditors();
+    updateAll();
+    touch();
+    showToast(t('fit-ok'));
+  }
+}
+
+/* ---- Aufbau ---- */
+function buildGarden(){
+  const {w,d}=S.garden; const W=S.garden.walls;
+  if(groundMesh) scene.remove(groundMesh);
+  groundMesh=new THREE.Mesh(new THREE.PlaneGeometry(w,d),new THREE.MeshStandardMaterial({color:0x8aa66a,roughness:1}));
+  groundMesh.rotation.x=-Math.PI/2; groundMesh.receiveShadow=true; scene.add(groundMesh);
+  if(gridHelper) scene.remove(gridHelper);
+  gridHelper=new THREE.GridHelper(Math.max(w,d),Math.round(Math.max(w,d)),0x4a5a48,0x4a5a48);
+  gridHelper.material.opacity=0.35; gridHelper.material.transparent=true; gridHelper.position.y=0.01; scene.add(gridHelper);
+  if(wallsGroup) scene.remove(wallsGroup); wallsGroup=new THREE.Group();
+  const wOp=(typeof S.garden.wallOpacity==='number')?S.garden.wallOpacity:1;
+  const wMat=new THREE.MeshStandardMaterial({color:0xc9c4ba,roughness:0.95,side:THREE.DoubleSide,transparent:wOp<0.999,opacity:wOp,depthWrite:wOp>0.999}); const th=0.08;
+  const mk=(wk,bw,bd,x,z,h)=>{ if(!(h>0.01)) return; const m=new THREE.Mesh(new THREE.BoxGeometry(bw,h,bd),wMat); m.position.set(x,h/2,z); m.castShadow=true; m.receiveShadow=true; m.userData.wallKey=wk; wallsGroup.add(m); };
+  mk('yt',w,th,0,-d/2, W.yt); mk('y0',w,th,0, d/2, W.y0); mk('xb',th,d,-w/2,0, W.xb); mk('x0',th,d, w/2,0, W.x0);
+  scene.add(wallsGroup);
+  const half=Math.max(w,d)*0.85+6; const c=sun.shadow.camera; c.left=-half;c.right=half;c.top=half;c.bottom=-half;c.near=0.5;c.far=200;c.updateProjectionMatrix();
+  northArrow.setLength(Math.max(w,d)/2.4,0.8,0.45);
+}
+function buildPoles(){
+  polesGroup.clear();
+  S.points.forEach((p,i)=>{ const top=poleTop(i); const h=Math.max(0.1,top.y); const col=new THREE.Color(postColor(i));
+    const cyl=new THREE.Mesh(new THREE.CylinderGeometry(0.05,0.06,h,16),new THREE.MeshStandardMaterial({color:col,roughness:0.7,metalness:0.1}));
+    cyl.position.set(top.x,h/2,top.z); cyl.castShadow=true; cyl.userData.postIdx=i; polesGroup.add(cyl);
+    const knob=new THREE.Mesh(new THREE.SphereGeometry(0.13,16,12),new THREE.MeshStandardMaterial({color:col,emissive:col.clone().multiplyScalar(0.25)})); knob.position.copy(top); knob.castShadow=true; knob.userData.postIdx=i; polesGroup.add(knob);
+  });
+}
+function buildSails(){
+  ensureSailMeshes(S.sails.length);
+  S.sails.forEach((s,si)=>{ const mesh=sailMeshes[si]; if(!s.on){ mesh.visible=false; return; } mesh.visible=true;
+    const surf=sailSurface(s); let pos;
+    if(s.shape===3){ const c=sailLocalCorners(s).map(v=>surf.lift(v.x,v.z));
+      pos=new Float32Array([c[0].x,c[0].y,c[0].z, c[1].x,c[1].y,c[1].z, c[2].x,c[2].y,c[2].z]); }
+    else { const w=s.bw,l=s.bl,N=6,tris=[];
+      const P=(i,j)=>surf.lift(-w/2+w*i/N, -l/2+l*j/N);
+      for(let i=0;i<N;i++) for(let j=0;j<N;j++){ const a=P(i,j),b=P(i+1,j),cc=P(i+1,j+1),d=P(i,j+1);
+        tris.push(a,b,cc, a,cc,d); }
+      pos=new Float32Array(tris.length*3); tris.forEach((p,idx)=>{pos[idx*3]=p.x;pos[idx*3+1]=p.y;pos[idx*3+2]=p.z;}); }
+    const g=mesh.geometry; g.setAttribute('position',new THREE.BufferAttribute(pos,3)); g.computeVertexNormals(); g.computeBoundingSphere();
+    mesh.material.color.set(s.color); mesh.material.opacity=s.opacity;
+  });
+}
+function buildRopes(){
+  ropesGroup.clear(); const mat=new THREE.LineBasicMaterial({color:0x2a2f36});
+  S.sails.forEach(s=>{ if(!s.on) return; const c=sailCorners(s); c.forEach((corner,k)=>{ const top=poleTop(s.posts[k]); ropesGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([corner,top]),mat)); }); });
+}
+function makeTable(f){ const tw=f.tw||1.1,tl=f.tl||0.7,ht=f.th||0.74; const g=new THREE.Group(); const wood=new THREE.MeshStandardMaterial({color:0x9c6b3f,roughness:0.8});
+  const ox=tw/2, oz=tl/2;
+  const top=new THREE.Mesh(new THREE.BoxGeometry(tw,0.05,tl),wood); top.position.set(ox,ht,oz); top.castShadow=true; top.receiveShadow=true; g.add(top);
+  const lx=Math.max(0.05,tw/2-0.06),lz=Math.max(0.05,tl/2-0.06);
+  [[-lx,-lz],[lx,-lz],[lx,lz],[-lx,lz]].forEach(([x,z])=>{const leg=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,ht,10),wood);leg.position.set(ox+x,ht/2,oz+z);leg.castShadow=true;g.add(leg);}); return g; }
+function makeChair(){ const g=new THREE.Group(); const m=new THREE.MeshStandardMaterial({color:0x556070,roughness:0.85});
+  const seat=new THREE.Mesh(new THREE.BoxGeometry(0.45,0.05,0.45),m); seat.position.y=0.45; seat.castShadow=true; g.add(seat);
+  const back=new THREE.Mesh(new THREE.BoxGeometry(0.45,0.45,0.05),m); back.position.set(0,0.67,-0.2); back.castShadow=true; g.add(back);
+  [[-0.18,-0.18],[0.18,-0.18],[0.18,0.18],[-0.18,0.18]].forEach(([x,z])=>{const leg=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,0.45,8),m);leg.position.set(x,0.225,z);leg.castShadow=true;g.add(leg);}); return g; }
+function makePergola(f){ const pw=f.pw||3,pl=f.pl||3,ph=f.ph||2.2; const g=new THREE.Group();
+  const mat=new THREE.MeshStandardMaterial({color:0x1a1a1a,roughness:0.6,metalness:0.25});
+  const ox=pw/2, oz=pl/2;
+  const roof=new THREE.Mesh(new THREE.BoxGeometry(pw,0.08,pl),mat); roof.position.set(ox,ph,oz); roof.castShadow=true; roof.receiveShadow=true; g.add(roof);
+  const lx=Math.max(0.06,pw/2-0.08),lz=Math.max(0.06,pl/2-0.08);
+  [[-lx,-lz],[lx,-lz],[lx,lz],[-lx,lz]].forEach(([x,z])=>{const leg=new THREE.Mesh(new THREE.BoxGeometry(0.08,ph,0.08),mat);leg.position.set(ox+x,ph/2,oz+z);leg.castShadow=true;g.add(leg);});
+  /* Vertikaler Sonnenschutz an den vier Seiten (optional) */
+  const sd=f.sides||{}; const fabric=new THREE.MeshStandardMaterial({color:0xc9bfa6,roughness:0.9,metalness:0.0,transparent:true,opacity:0.6,side:THREE.DoubleSide});
+  const addPanel=(width,px,pz,rotY)=>{ const pane=new THREE.Mesh(new THREE.PlaneGeometry(width,ph),fabric); pane.position.set(px,ph/2,pz); pane.rotation.y=rotY; pane.castShadow=true; g.add(pane); };
+  if(sd.front) addPanel(pw,ox,0,0);
+  if(sd.back)  addPanel(pw,ox,pl,0);
+  if(sd.left)  addPanel(pl,0,oz,Math.PI/2);
+  if(sd.right) addPanel(pl,pw,oz,Math.PI/2);
+  g.userData.shadeMesh=roof; return g; }
+function buildFurniture(){ furnGroup.clear(); pergolaRoof=null; const B=refWorld();
+  const makers={table:makeTable,chair:makeChair,pergola:makePergola};
+  Object.keys(S.furniture).forEach(key=>{ const f=S.furniture[key]; if(!f||!f.on) return;
+    const type=furnType(key); const maker=makers[type]; if(!maker) return;
+    const obj=maker(f); obj.position.set(B.x+f.x,0,B.z+f.y); obj.rotation.y=f.yaw*DEG; obj.userData.furnKey=key; furnGroup.add(obj);
+    if(type==='pergola') pergolaRoof=obj.userData.shadeMesh; });
+  furnGroup.updateMatrixWorld(true); }
+
+/* ---- Person figure ---- */
+function buildPerson(){
+  personGroup.clear();
+  const p=S.person; if(!p||!p.on) return;
+  const B=refWorld(); const h=p.h||1.9;
+  const skinMat=new THREE.MeshStandardMaterial({color:0xe8b88a,roughness:0.85});
+  const shirtMat=new THREE.MeshStandardMaterial({color:0x3a7bd5,roughness:0.85});
+  const pantsMat=new THREE.MeshStandardMaterial({color:0x3a3a4a,roughness:0.85});
+  const headR=h*0.06; const legH=h*0.46; const torsoH=h*0.32; const neckY=legH+torsoH;
+  /* legs */
+  const legR=h*0.035; const legGap=h*0.06;
+  const legGeo=new THREE.CylinderGeometry(legR,legR,legH,8);
+  const lLeg=new THREE.Mesh(legGeo,pantsMat); lLeg.position.set(-legGap,legH/2,0); lLeg.castShadow=true; personGroup.add(lLeg);
+  const rLeg=new THREE.Mesh(legGeo,pantsMat); rLeg.position.set(legGap,legH/2,0); rLeg.castShadow=true; personGroup.add(rLeg);
+  /* torso */
+  const torsoW=h*0.14, torsoD=h*0.08;
+  const torso=new THREE.Mesh(new THREE.BoxGeometry(torsoW,torsoH,torsoD),shirtMat);
+  torso.position.set(0,legH+torsoH/2,0); torso.castShadow=true; personGroup.add(torso);
+  /* arms */
+  const armR=h*0.028, armH=h*0.30;
+  const armGeo=new THREE.CylinderGeometry(armR,armR,armH,8);
+  const lArm=new THREE.Mesh(armGeo,shirtMat); lArm.position.set(-torsoW/2-armR,neckY-armH/2,0); lArm.castShadow=true; personGroup.add(lArm);
+  const rArm=new THREE.Mesh(armGeo,shirtMat); rArm.position.set(torsoW/2+armR,neckY-armH/2,0); rArm.castShadow=true; personGroup.add(rArm);
+  /* head */
+  const head=new THREE.Mesh(new THREE.SphereGeometry(headR,16,12),skinMat);
+  head.position.set(0,neckY+headR+h*0.01,0); head.castShadow=true; personGroup.add(head);
+  personGroup.position.set(B.x+p.x,0,B.z+p.y);
+  personGroup.userData.furnKey='__person__';
+  personGroup.updateMatrixWorld(true);
+}
+
+/* ---- Labels ---- */
+function roundRect(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+function makeTextSprite(lines,hex){
+  const fs=40,lh=48,pad=20; const canvas=document.createElement('canvas'); const ctx=canvas.getContext('2d');
+  const font=`600 ${fs}px -apple-system,Segoe UI,Roboto,sans-serif`; ctx.font=font;
+  const w=Math.ceil(Math.max(...lines.map(l=>ctx.measureText(l).width)))+pad*2;
+  const h=lines.length*lh+pad*2; canvas.width=w; canvas.height=h;
+  ctx.font=font; ctx.textBaseline='top';
+  ctx.fillStyle='rgba(17,22,28,0.85)'; roundRect(ctx,0,0,w,h,16); ctx.fill();
+  ctx.strokeStyle=hex; ctx.lineWidth=4; roundRect(ctx,2,2,w-4,h-4,14); ctx.stroke();
+  lines.forEach((l,i)=>{ ctx.fillStyle=i===0?hex:'#d3dde7'; ctx.fillText(l,pad,pad+i*lh); });
+  const tex=new THREE.CanvasTexture(canvas); tex.anisotropy=4;
+  const spr=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,depthTest:false,depthWrite:false,transparent:true}));
+  /* Bildschirm-konstante Größe (unabhängig von der Kamera-Entfernung) – wird je Frame in updateLabelScales() gesetzt */
+  spr.userData.lbl={ aspect:w/h, hpx:h };
+  spr.scale.set(w*0.0015,h*0.0015,1); spr.renderOrder=999; return spr;
+}
+/* Hält die Label-Größe in Bildschirm-Pixeln konstant: Skala wächst linear mit dem Abstand zur Kamera. */
+const LABEL_K=0.000275;
+function updateLabelScales(){
+  const f=2*Math.tan(camera.fov*DEG/2);
+  labelsGroup.traverse(o=>{ if(o.isSprite && o.userData.lbl){
+    const d=camera.position.distanceTo(o.position);
+    const sy=o.userData.lbl.hpx*LABEL_K*f*d;
+    o.scale.set(sy*o.userData.lbl.aspect, sy, 1);
+  }});
+}
+/* Maßlinie wie auf einer technischen Zeichnung: Linie + zwei Pfeilspitzen + Maßzahl */
+function addDimLine(group,a,b,text,hex){
+  const A=a.clone(),B=b.clone();
+  const dir=new THREE.Vector3().subVectors(B,A); const len=dir.length(); if(len<0.08) return;
+  dir.normalize();
+  const ARROW=0x000000; /* Maßlinien & Pfeile immer schwarz */
+  const mat=new THREE.LineBasicMaterial({color:ARROW,depthTest:false,transparent:true});
+  const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints([A,B]),mat); line.renderOrder=998; group.add(line);
+  const headLen=Math.min(0.28,len*0.3), headW=headLen*0.16;
+  const cMat=new THREE.MeshBasicMaterial({color:ARROW,depthTest:false,transparent:true});
+  const mkHead=(pos,d)=>{ const c=new THREE.Mesh(new THREE.ConeGeometry(headW,headLen,12),cMat);
+    c.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d); c.position.copy(pos); c.renderOrder=998; group.add(c); };
+  mkHead(A.clone().addScaledVector(dir, headLen/2), dir.clone().negate()); /* Spitze an A, nach außen */
+  mkHead(B.clone().addScaledVector(dir,-headLen/2), dir.clone());          /* Spitze an B, nach außen */
+  const mid=A.clone().add(B).multiplyScalar(0.5); mid.y+=0.16;
+  const spr=makeTextSprite([text],hex); spr.position.copy(mid); group.add(spr);
+}
+function buildDimensions(){
+  const dimHex='#e6edf3';
+  const {w,d}=S.garden; const off=0.7;
+  /* Garten: Breite (vorne) & Tiefe (rechts) */
+  addDimLine(labelsGroup,new THREE.Vector3(-w/2,0.05,d/2+off),new THREE.Vector3(w/2,0.05,d/2+off),fmt(w)+' m',dimHex);
+  addDimLine(labelsGroup,new THREE.Vector3(w/2+off,0.05,-d/2),new THREE.Vector3(w/2+off,0.05,d/2),fmt(d)+' m',dimHex);
+  /* Pfostenhöhen vertikal neben jedem Pfosten */
+  S.points.forEach((p,i)=>{ const top=poleTop(i); const x=top.x+0.24,z=top.z+0.24;
+    addDimLine(labelsGroup,new THREE.Vector3(x,0.02,z),new THREE.Vector3(x,Math.max(0.2,top.y),z),'H '+fmt(p.h)+' m',postColor(i)); });
+  /* Positions-Pfeile: X- und Y-Abstände vom Referenzpunkt (L-Form am Boden) */
+  const Bref=refWorld(); const Bx=Bref.x,Bz=Bref.z,gY=0.05;
+  S.points.forEach((p,i)=>{
+    if(Math.abs(p.x)>0.1) addDimLine(labelsGroup,new THREE.Vector3(Bx,gY,Bz),new THREE.Vector3(Bx+p.x,gY,Bz),'X '+fmt(p.x)+' m',postColor(i));
+    if(Math.abs(p.y)>0.1) addDimLine(labelsGroup,new THREE.Vector3(Bx+p.x,gY,Bz),new THREE.Vector3(Bx+p.x,gY,Bz+p.y),'Y '+fmt(p.y)+' m',postColor(i));
+  });
+  Object.keys(S.furniture).forEach(key=>{
+    const f=S.furniture[key]; if(!f||!f.on) return;
+    const type=furnType(key);
+    const color=type==='table'?'#d9a066':type==='pergola'?'#aab3bd':'#7eb8da';
+    if(Math.abs(f.x)>0.1) addDimLine(labelsGroup,new THREE.Vector3(Bx,gY,Bz),new THREE.Vector3(Bx+f.x,gY,Bz),'X '+fmt(f.x)+' m',color);
+    if(Math.abs(f.y)>0.1) addDimLine(labelsGroup,new THREE.Vector3(Bx+f.x,gY,Bz),new THREE.Vector3(Bx+f.x,gY,Bz+f.y),'Y '+fmt(f.y)+' m',color);
+  });
+  /* Aktive Segel: Kantenlängen zwischen den aufgehängten Ecken */
+  S.sails.forEach(s=>{ if(!s.on) return; const c=sailCorners(s);
+    for(let k=0;k<c.length;k++){ const a=c[k],b=c[(k+1)%c.length];
+      addDimLine(labelsGroup,a,b,fmt(a.distanceTo(b))+' m',s.color); } });
+  /* Positions-Labels für Pfosten und Möbel (nur wenn Pfosten-Labels nicht bereits aktiv) */
+  if(!S.showPostLabels){
+    const B=refWorld();
+    S.points.forEach((p,i)=>{ const top=poleTop(i);
+      const spr=makeTextSprite([`P${i+1}`,`X ${fmt(p.x)}  Y ${fmt(p.y)}`],postColor(i));
+      spr.position.set(top.x,0.5,top.z); labelsGroup.add(spr); });
+    Object.keys(S.furniture).forEach(key=>{
+      const f=S.furniture[key]; if(!f||!f.on) return;
+      const type=furnType(key);
+      const color=type==='table'?'#d9a066':type==='pergola'?'#aab3bd':'#7eb8da';
+      const topY=type==='table'?(f.th||0.74):type==='pergola'?(f.ph||2.2):0.45;
+      const name=furnLabel(type);
+      const spr=makeTextSprite([name,`X ${fmt(f.x)}  Y ${fmt(f.y)}`],color); spr.position.set(B.x+f.x,topY+0.4,B.z+f.y); labelsGroup.add(spr);
+    });
+  }
+}
+function buildLabels(){
+  labelsGroup.clear(); refMarker.visible=true;
+  if(S.showPostLabels){
+    S.points.forEach((p,i)=>{ const top=poleTop(i);
+      const spr=makeTextSprite([`P${i+1}`,`X ${fmt(p.x)}  Y ${fmt(p.y)}`,`H ${fmt(p.h)} m`],postColor(i));
+      spr.position.set(top.x,top.y+0.55,top.z); labelsGroup.add(spr); });
+    const B=refWorld();
+    Object.keys(S.furniture).forEach(key=>{
+      const f=S.furniture[key]; if(!f||!f.on) return;
+      const type=furnType(key);
+      const color=type==='table'?'#d9a066':type==='pergola'?'#aab3bd':'#7eb8da';
+      const name=furnLabel(type);
+      const yr=(f.yaw||0)*DEG, ca=Math.cos(yr), sa=Math.sin(yr);
+      let topY,dims,hx,hz;
+      if(type==='table'){ topY=f.th||0.74; dims=`B ${fmt(f.tw)} · L ${fmt(f.tl)} · H ${fmt(f.th)} m`; hx=(f.tw||1.1)/2; hz=(f.tl||0.7)/2; }
+      else if(type==='pergola'){ topY=f.ph||2.2; dims=`B ${fmt(f.pw)} · L ${fmt(f.pl)} · H ${fmt(f.ph)} m`; hx=(f.pw||3)/2; hz=(f.pl||3)/2; }
+      else { topY=0.45; dims=`H ${fmt(0.45)} m`; hx=0; hz=0; }
+      const cx=B.x+f.x + hx*ca - hz*sa, cz=B.z+f.y + hx*sa + hz*ca;
+      const spr=makeTextSprite([name,`${t('lbl-corner-ecke')} X ${fmt(f.x)}  Y ${fmt(f.y)}`,dims],color);
+      spr.position.set(cx, topY+0.45, cz); labelsGroup.add(spr);
+    });
+  }
+  if(S.showDims) buildDimensions();
+}
+
+function updateSun(){
+  const {lat,lon}=S.loc; const date=new Date(S.dateStr+'T00:00:00'); date.setMinutes(S.timeMin);
+  const pos=SunCalc.getPosition(date,lat,lon); const az=pos.azimuth,alt=pos.altitude; const nr=S.garden.north*DEG;
+  let dir=new THREE.Vector3(-Math.sin(az)*Math.cos(alt),Math.sin(alt),Math.cos(az)*Math.cos(alt)); dir.applyAxisAngle(new THREE.Vector3(0,1,0),nr); sunDir.copy(dir);
+  sun.position.copy(dir.clone().multiplyScalar(60)); sun.target.position.set(0,0,0); sun.target.updateMatrixWorld();
+  northArrow.setDirection(new THREE.Vector3(0,0,-1).applyAxisAngle(new THREE.Vector3(0,1,0),nr+NORTH_VIS_OFFSET));
+  const day=alt>0; sun.intensity=day?2.2:0; hemi.intensity=day?0.55:0.18; scene.background.set(day?0xcfe3f2:0x223043);
+  if(day){ const horiz=new THREE.Vector3(sunDir.x,0,sunDir.z); if(horiz.lengthSq()>0.001){ horiz.normalize(); const al=Math.max(S.garden.w,S.garden.d)/5; sunArrow.setDirection(horiz); sunArrow.setLength(al,al*0.2,al*0.13); } sunArrow.visible=true; } else { sunArrow.visible=false; }
+  const altDeg=(alt/DEG).toFixed(1),azDeg=(((az/DEG)+180+360)%360).toFixed(0);
+  document.getElementById('sunReadout').innerHTML=`${t('sun-alt')}: <b>${altDeg}°</b><br>${t('sun-az')}: <b>${azDeg}°</b><br>${t('sun-status')}: <b>${day?t('sun-day'):t('sun-night')}</b>`;
+  const hh=String(Math.floor(S.timeMin/60)).padStart(2,'0'),mm=String(S.timeMin%60).padStart(2,'0');
+  const locale=currentLang==='ru'?'ru-RU':currentLang==='en'?'en-GB':'de-DE';
+  document.getElementById('hud').innerHTML=`${date.toLocaleDateString(locale)} &nbsp; <b>${hh}:${mm}</b> `+(day?'':'<span class="night">'+t('hud-night')+'</span>');
+  updateShadow(day);
+}
+function updateShadow(day){
+  shadowGroup.clear(); const out=document.getElementById('shadowReadout'); const show=document.getElementById('showShadow')?.checked;
+  if(!day || sunDir.y<=0.02){ out.innerHTML=t('shadow-night'); return; }
+  let html=''; const activeMeshes=[];
+  S.sails.forEach((s,si)=>{ if(!s.on) return;
+    const corners=sailCorners(s); const proj=corners.map(P=>P.clone().addScaledVector(sunDir,-(P.y/sunDir.y)));
+    const clipped=clipPolyToGarden(proj);
+    const area=polyAreaXZ(clipped);
+    html+=`${t('shadow-sail')} ${si+1}: <b>${fmt(area)} m²</b><br>`;
+    if(show && clipped.length>=3){ const tris=[]; for(let i=1;i<clipped.length-1;i++){tris.push(clipped[0],clipped[i],clipped[i+1]);}
+      const arr=new Float32Array(tris.length*3); tris.forEach((p,idx)=>{arr[idx*3]=p.x;arr[idx*3+1]=0.02;arr[idx*3+2]=p.z;});
+      const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(arr,3));
+      shadowGroup.add(new THREE.Mesh(g,new THREE.MeshBasicMaterial({color:0x10161d,transparent:true,opacity:0.28,side:THREE.DoubleSide,depthWrite:false})));
+      const loop=[...clipped,clipped[0]].map(p=>new THREE.Vector3(p.x,0.025,p.z)); shadowGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(loop),new THREE.LineBasicMaterial({color:0x10161d}))); }
+    activeMeshes.push(sailMeshes[si]);
+  });
+  const blockers=[...activeMeshes]; if(pergolaRoof) blockers.push(pergolaRoof);
+  const B=refWorld();
+  const T=S.furniture.table; const tyr=(T.yaw||0)*DEG, thx=(T.tw||1.1)/2, thz=(T.tl||0.7)/2;
+  const tcx=B.x+T.x + thx*Math.cos(tyr) - thz*Math.sin(tyr), tcz=B.z+T.y + thx*Math.sin(tyr) + thz*Math.cos(tyr);
+  const probe={ table:[tcx,(T.th||0.74),tcz], chair1:[B.x+S.furniture.chair1.x,0.45,B.z+S.furniture.chair1.y], chair2:[B.x+S.furniture.chair2.x,0.45,B.z+S.furniture.chair2.y] };
+  const furnNames={table:t('furn-table'),chair1:t('furn-chair1'),chair2:t('furn-chair2')};
+  Object.keys(probe).forEach(k=>{ if(!S.furniture[k].on) return; raycaster.set(new THREE.Vector3(...probe[k]),sunDir);
+    const shaded=blockers.length>0 && raycaster.intersectObjects(blockers,false).length>0;
+    html+=`${furnNames[k]}: <b>${shaded?t('shadow-shaded'):t('shadow-sun')}</b><br>`; });
+  out.innerHTML=html||t('shadow-none');
+}
+
+/* ---- Tagesauswertung ---- */
+const ROUND=n=>Math.round(n*100)/100;
+/* Sutherland-Hodgman polygon clipping to garden rectangle (XZ plane) */
+function clipPolyToGarden(pts){
+  const hw=S.garden.w/2, hd=S.garden.d/2;
+  const edges=[ // each edge: inside test + intersection
+    {inside:p=>p.x>=-hw, intersect:(a,b)=>{const t=(-hw-a.x)/(b.x-a.x); return {x:-hw,z:a.z+t*(b.z-a.z)};}},
+    {inside:p=>p.x<= hw, intersect:(a,b)=>{const t=( hw-a.x)/(b.x-a.x); return {x: hw,z:a.z+t*(b.z-a.z)};}},
+    {inside:p=>p.z>=-hd, intersect:(a,b)=>{const t=(-hd-a.z)/(b.z-a.z); return {x:a.x+t*(b.x-a.x),z:-hd};}},
+    {inside:p=>p.z<= hd, intersect:(a,b)=>{const t=( hd-a.z)/(b.z-a.z); return {x:a.x+t*(b.x-a.x),z: hd};}}
+  ];
+  let poly=pts.map(p=>({x:p.x,z:p.z}));
+  for(const e of edges){
+    if(poly.length===0) return [];
+    const out=[];
+    for(let i=0;i<poly.length;i++){
+      const cur=poly[i], prev=poly[(i+poly.length-1)%poly.length];
+      const ci=e.inside(cur), pi=e.inside(prev);
+      if(pi&&ci) out.push(cur);
+      else if(pi&&!ci) out.push(e.intersect(prev,cur));
+      else if(!pi&&ci){ out.push(e.intersect(prev,cur)); out.push(cur); }
+    }
+    poly=out;
+  }
+  return poly;
+}
+function polyAreaXZ(pts){
+  let a=0; for(let i=0;i<pts.length;i++){const p=pts[i],q=pts[(i+1)%pts.length]; a+=p.x*q.z-q.x*p.z;} return Math.abs(a)/2;
+}
+function sunDirAtMin(min){
+  const {lat,lon}=S.loc; const date=new Date(S.dateStr+'T00:00:00'); date.setMinutes(min);
+  const pos=SunCalc.getPosition(date,lat,lon); const az=pos.azimuth,alt=pos.altitude; const nr=S.garden.north*DEG;
+  const dir=new THREE.Vector3(-Math.sin(az)*Math.cos(alt),Math.sin(alt),Math.cos(az)*Math.cos(alt)).applyAxisAngle(new THREE.Vector3(0,1,0),nr);
+  return { dir, alt };
+}
+/* Punkt {x,z} eines 3D-Punktes entlang der Sonnenrichtung auf den Boden (y=0) projizieren */
+function projToGround(P,dir){ const g=P.clone().addScaledVector(dir,-(P.y/dir.y)); return {x:g.x,z:g.z}; }
+function sailGroundPoly(s,dir){ return sailCorners(s).map(P=>projToGround(P,dir)); }
+/* Bodenschatten des Pergola-Daches (Rechteck in Dachhöhe) als Polygon */
+function pergolaGroundShadow(dir){ const f=S.furniture.pergola; if(!f||!f.on||dir.y<=0.02) return null;
+  const B=refWorld(); const pw=f.pw||3,pl=f.pl||3,ph=f.ph||2.2; const yr=(f.yaw||0)*DEG,ca=Math.cos(yr),sa=Math.sin(yr);
+  const ox=pw/2,oz=pl/2; /* Dachmittenversatz wie in makePergola() */
+  const ccx=B.x+f.x + ox*ca - oz*sa, ccz=B.z+f.y + ox*sa + oz*ca;
+  return [[-pw/2,-pl/2],[pw/2,-pl/2],[pw/2,pl/2],[-pw/2,pl/2]].map(([lx,lz])=>{
+    const wx=ccx+lx*ca-lz*sa, wz=ccz+lx*sa+lz*ca; return projToGround(new THREE.Vector3(wx,ph,wz),dir); }); }
+/* Bodenschatten der vertikalen Pergola-Seitenpanels (je aktives Panel ein Quad) */
+function pergolaSideShadows(dir){ const f=S.furniture.pergola; if(!f||!f.on||dir.y<=0.02) return [];
+  const sd=f.sides||{}; if(!(sd.front||sd.back||sd.left||sd.right)) return [];
+  const B=refWorld(); const pw=f.pw||3,pl=f.pl||3,ph=f.ph||2.2; const yr=(f.yaw||0)*DEG,ca=Math.cos(yr),sa=Math.sin(yr);
+  const ox=B.x+f.x, oz=B.z+f.y;
+  const W=(lx,lz)=>({x:ox+lx*ca-lz*sa, z:oz+lx*sa+lz*ca}); /* Bodenpunkt (y=0) */
+  const polys=[]; const add=(a,b)=>{ const top=p=>projToGround(new THREE.Vector3(p.x,ph,p.z),dir);
+    polys.push([ {x:a.x,z:a.z}, {x:b.x,z:b.z}, top(b), top(a) ]); };
+  if(sd.front) add(W(0,0), W(pw,0));
+  if(sd.back)  add(W(0,pl),W(pw,pl));
+  if(sd.left)  add(W(0,0), W(0,pl));
+  if(sd.right) add(W(pw,0),W(pw,pl));
+  return polys; }
+/* Bodenschatten der Wände (je Wand ein Quad zwischen Basislinie und projizierter Oberkante) */
+function wallGroundShadows(dir){ if(dir.y<=0.02) return []; const {w,d}=S.garden,W=S.garden.walls; const hw=w/2,hd=d/2; const polys=[];
+  const add=(b1,b2,h)=>{ if(!(h>0.01)) return; polys.push([ {x:b1[0],z:b1[1]}, {x:b2[0],z:b2[1]},
+    projToGround(new THREE.Vector3(b2[0],h,b2[1]),dir), projToGround(new THREE.Vector3(b1[0],h,b1[1]),dir) ]); };
+  add([-hw,-hd],[hw,-hd],W.yt); add([-hw,hd],[hw,hd],W.y0); add([-hw,-hd],[-hw,hd],W.xb); add([hw,-hd],[hw,hd],W.x0);
+  return polys; }
+/* Liefert die Grenzen des Auswertungsrechtecks in Weltkoordinaten (oder null) */
+function evalRectWorld(){ const rect=S.evalRect; if(!rect||!rect.on) return null; const B=refWorld();
+  return { x0:Math.min(rect.x0,rect.x1)+B.x, x1:Math.max(rect.x0,rect.x1)+B.x,
+           z0:Math.min(rect.y0,rect.y1)+B.z, z1:Math.max(rect.y0,rect.y1)+B.z }; }
+/* Tagesauswertung per Raster-Sampling des Bodens.
+   Eine Zelle zählt für ein Segel nur, wenn sie im Segelschatten liegt UND nicht bereits
+   durch Wand/Pergola beschattet ist (Überschneidung wird abgezogen). Innerhalb des Gartens. */
+function computeDayShade(){
+  const start=S.analysisStart,end=S.analysisEnd,step=15, hours=(end-start)/60;
+  const {w,d}=S.garden; const hw=w/2,hd=d/2;
+  const NX=Math.max(12,Math.min(70,Math.round(w/0.2))), NY=Math.max(12,Math.min(70,Math.round(d/0.2)));
+  const cellA=(w/NX)*(d/NY);
+  const activeIdx=S.sails.map((s,i)=>s.on?i:-1).filter(i=>i>=0);
+  const sums=S.sails.map(()=>0), sumsRect=S.sails.map(()=>0);
+  let unionSum=0, unionSumRect=0;   /* Vereinigung: jede Zelle zaehlt nur EINMAL, egal von wie vielen Segeln beschattet -> keine Doppelzaehlung der Ueberlappung */
+  const Rw=evalRectWorld(); const rectOn=!!Rw;
+  const cells=[];
+  for(let ix=0;ix<NX;ix++){ const cx=-hw+(ix+0.5)*(w/NX);
+    for(let iy=0;iy<NY;iy++){ const cz=-hd+(iy+0.5)*(d/NY);
+      const inRect=Rw?(cx>=Rw.x0&&cx<=Rw.x1&&cz>=Rw.z0&&cz<=Rw.z1):false;
+      cells.push({x:cx,z:cz,inRect}); } }
+  for(let m=start;m<=end;m+=step){ const {dir,alt}=sunDirAtMin(m); const wgt=(m===start||m===end)?0.5:1;
+    if(!(alt>0&&dir.y>0.02)) continue;
+    const blockers=wallGroundShadows(dir); const pg=pergolaGroundShadow(dir); if(pg) blockers.push(pg); blockers.push(...pergolaSideShadows(dir));
+    const sailPolys=activeIdx.map(i=>sailGroundPoly(S.sails[i],dir));
+    for(const c of cells){
+      let blocked=false; for(const bp of blockers){ if(pointInPoly(c,bp)){ blocked=true; break; } }
+      if(blocked) continue;
+      let anyHit=false;
+      activeIdx.forEach((si,k)=>{ if(pointInPoly(c,sailPolys[k])){ sums[si]+=cellA*wgt; if(c.inRect) sumsRect[si]+=cellA*wgt; anyHit=true; } });
+      if(anyHit){ unionSum+=cellA*wgt; if(c.inRect) unionSumRect+=cellA*wgt; }
+    }
+  }
+  const fmtMin=m=>`${Math.floor(m/60)}:${String(m%60).padStart(2,'0')}`;
+  const res={ window:`${fmtMin(start)}–${fmtMin(end)}`, date:S.dateStr, stepMin:step, gridM:ROUND(w/NX), rectOn, perSail:[],
+    total_m2h:0, total_avg_m2:0, total_rect_m2h:0, total_rect_avg_m2:0, overlap_m2h:0, overlap_rect_m2h:0 };
+  let sumInt=0, sumIntR=0;   /* Summe der Einzel-Segel-Integrale (mit Doppelzaehlung) -> nur fuer die Ueberlappungs-Diagnose */
+  S.sails.forEach((s,si)=>{ if(!s.on) return;
+    const integral=sums[si]*step/60, avg=integral/hours;
+    const integralR=sumsRect[si]*step/60, avgR=integralR/hours;
+    res.perSail.push({ sail:si+1, integral_m2h:ROUND(integral), avg_m2:ROUND(avg),
+      integral_rect_m2h:ROUND(integralR), avg_rect_m2:ROUND(avgR) });
+    sumInt+=integral; sumIntR+=integralR; });
+  /* TOTAL = Vereinigung (echter Gesamtschatten OHNE Doppelzaehlung). Ueberlappung = Summe - Vereinigung = verschwendete Doppel-Beschattung. */
+  const unionInt=unionSum*step/60, unionIntR=unionSumRect*step/60;
+  res.total_m2h=ROUND(unionInt); res.total_avg_m2=ROUND(unionInt/hours);
+  res.total_rect_m2h=ROUND(unionIntR); res.total_rect_avg_m2=ROUND(unionIntR/hours);
+  res.overlap_m2h=ROUND(Math.max(0,sumInt-unionInt)); res.overlap_rect_m2h=ROUND(Math.max(0,sumIntR-unionIntR));
+  return res;
+}
+function optimizePostAssignment(){
+  const activeSails=S.sails.map((s,i)=>({idx:i,shape:s.shape})).filter((_,i)=>S.sails[i].on);
+  if(!activeSails.length) return;
+  function perms(arr,r){
+    if(r===0) return [[]];
+    return arr.flatMap((v,i)=>perms([...arr.slice(0,i),...arr.slice(i+1)],r-1).map(p=>[v,...p]));
+  }
+  function isCollinear(posts){
+    if(posts.length<3) return false;
+    const a=S.points[posts[0]],b=S.points[posts[1]],c=S.points[posts[2]];
+    return Math.abs((b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x))<0.1;
+  }
+  function fastScore(assignment){
+    const orig=activeSails.map(s=>[...S.sails[s.idx].posts]);
+    activeSails.forEach((s,i)=>{ S.sails[s.idx].posts=assignment[i]; });
+    const start=S.analysisStart,end=S.analysisEnd,step=30;
+    const {w,d}=S.garden; const hw=w/2,hd=d/2;
+    const NX=20,NY=20; const cellA=(w/NX)*(d/NY);
+    const Rw=evalRectWorld(); let score=0;
+    for(let m=start;m<=end;m+=step){
+      const {dir,alt}=sunDirAtMin(m); if(!(alt>0&&dir.y>0.02)) continue;
+      const wgt=(m===start||m===end)?0.5:1;
+      const polys=activeSails.map(s=>sailGroundPoly(S.sails[s.idx],dir));
+      for(let ix=0;ix<NX;ix++){ const cx=-hw+(ix+0.5)*(w/NX);
+        for(let iy=0;iy<NY;iy++){ const cz=-hd+(iy+0.5)*(d/NY);
+          if(Rw&&!(cx>=Rw.x0&&cx<=Rw.x1&&cz>=Rw.z0&&cz<=Rw.z1)) continue;
+          const pt={x:cx,z:cz};
+          for(const poly of polys){ if(pointInPoly(pt,poly)){ score+=cellA*wgt; break; } }
+        }
+      }
+    }
+    activeSails.forEach((s,i)=>{ S.sails[s.idx].posts=orig[i]; });
+    return score;
+  }
+  const allPosts=[...Array(S.points.length).keys()];
+  let best=-1,bestAssign=null;
+  if(activeSails.length===1){
+    for(const p of perms(allPosts,activeSails[0].shape)){
+      if(activeSails[0].shape===3&&isCollinear(p)) continue;
+      const sc=fastScore([p]); if(sc>best){best=sc;bestAssign=[p];}
+    }
+  } else if(activeSails.length>=2){
+    const [s0,s1]=activeSails;
+    for(const p0 of perms(allPosts,s0.shape)){
+      if(s0.shape===3&&isCollinear(p0)) continue;
+      const rem=allPosts.filter(i=>!p0.includes(i));
+      for(const p1 of perms(rem,Math.min(s1.shape,rem.length))){
+        if(s1.shape===3&&isCollinear(p1)) continue;
+        const sc=fastScore([p0,p1]); if(sc>best){best=sc;bestAssign=[p0,p1];}
+      }
+    }
+  }
+  if(bestAssign){ activeSails.forEach((s,i)=>{ S.sails[s.idx].posts=bestAssign[i]; }); buildSailEditors(); updateAll(); touch(); }
+}
+
+/* ---- Ideale Segel-Positionierung (unabhängig von Pfosten) ---- */
+function optimizeSailPositions(){
+  const btn=document.getElementById('btnOptimizeSails');
+  if(btn){ btn.disabled=true; btn.textContent='⏳ …'; }
+  const btn2=document.getElementById('btnOptimizeFloat');
+  if(btn2){ btn2.disabled=true; }
+  setTimeout(()=>{
+    const resultMsg=_runSailOptimizer();
+    if(btn){ btn.disabled=false; }
+    if(btn2){ btn2.disabled=false; }
+    applyTranslations();
+    if(resultMsg){ showToast(resultMsg, 8000); }
+  },16);
+}
+function _runSailOptimizer(){
+  const {w,d}=S.garden; const hw=w/2,hd=d/2;
+  const Rw=evalRectWorld(); const useRect=!!(Rw&&S.evalRect.on);
+  const B=refWorld();
+  const activeSails=S.sails.map((s,i)=>({si:i,s})).filter(({s})=>s.on);
+  if(!activeSails.length) return;
+
+  /* ---- Regressions-Schutz: aktuellen Zustand + echte KPI (Sitzflaeche bevorzugt) als Baseline ---- */
+  const kpiNow=()=>{ const r=computeDayShade(); return useRect? r.total_rect_m2h : r.total_m2h; };
+  /* ε-Toleranz (Nutzer-Wunsch): Ergebnisse innerhalb ±EPS m²·h gelten als gleich.
+     -> verhindert, dass knapp unterlegene (auch synergetische) Kandidaten untergehen, und
+        dient als Schwelle fuer den Regressionsschutz. Sekundaerkriterien bei Gleichstand:
+        weniger Ueberlappung, dann niedrigere maximale Pfostenhoehe. */
+  const EPS=Math.max(0, (typeof S.optimizerTolerance==='number'&&!isNaN(S.optimizerTolerance))? S.optimizerTolerance : 0);
+  const MODEL=S.optimizerModel||'greedy-v6';
+  const beforeSnap={ points:JSON.parse(JSON.stringify(S.points)),
+    sails:S.sails.map(s=>({posts:[...s.posts],dx:s.dx,dz:s.dz,rot:s.rot})) };
+  const beforeKPI=kpiNow();
+
+  /* ---- Sonnenrichtungen fuer das EINGEGEBENE Datum (S.dateStr), 30-min-Schritte 10-18 Uhr ---- */
+  const sunDirs=[]; let sunSumX=0,sunSumZ=0;
+  for(let m=S.analysisStart;m<=S.analysisEnd;m+=30){ const {dir,alt}=sunDirAtMin(m);
+    if(alt>0&&dir.y>0.02){ sunDirs.push({dir,wgt:(m===S.analysisStart||m===S.analysisEnd)?0.5:1}); sunSumX+=dir.x; sunSumZ+=dir.z; } }
+  if(!sunDirs.length) return;
+  /* Mittlere horizontale Sonnenrichtung -> Kipp-Achse (Segel zur Sonne neigen = groesserer Bodenschatten) */
+  const tlen=Math.hypot(sunSumX,sunSumZ); const tdx=tlen>1e-6?sunSumX/tlen:0, tdz=tlen>1e-6?sunSumZ/tlen:1;
+
+  /* ---- KPI-konsistente statische Schatten je Zeitschritt: Wand + Pergola ---- */
+  const blockersPerStep=sunDirs.map(({dir})=>{ const b=wallGroundShadows(dir); const pg=pergolaGroundShadow(dir); if(pg) b.push(pg); b.push(...pergolaSideShadows(dir)); return b; });
+
+  /* ---- Bewertungszellen: NUR Sitzflaeche (Auswertungsrechteck), sonst ganzer Garten ---- */
+  const NX=18,NY=18; const cellA=(w/NX)*(d/NY);
+  const cells=[];
+  for(let ix=0;ix<NX;ix++){ const cx=-hw+(ix+0.5)*(w/NX);
+    for(let iy=0;iy<NY;iy++){ const cz=-hd+(iy+0.5)*(d/NY);
+      const inRect=useRect?(cx>=Rw.x0&&cx<=Rw.x1&&cz>=Rw.z0&&cz<=Rw.z1):true;
+      if(inRect) cells.push({x:cx,z:cz}); } }
+  if(!cells.length){ for(let ix=0;ix<NX;ix++) for(let iy=0;iy<NY;iy++)
+    cells.push({x:-hw+(ix+0.5)*(w/NX),z:-hd+(iy+0.5)*(d/NY)}); }
+
+  /* ---- Geometrie ---- */
+  const CLEAR=0.15;            /* Segel-Fussabdruck muss mit Abstand in den Garten passen */
+  const H_CTR=3.0; const H_MIN=2.0, H_MAX=3.9;
+  const tiltArr=[-0.2,-0.1,0,0.1,0.2];   /* Hoehensteigung entlang Sonnen-Achse (gering -> Pfostenhoehen realistisch) */
+
+  /* Kipp-Ebene: Hoehe an Welt-Punkt (wx,wz) relativ zum Segelzentrum (cx,cz) */
+  function tiltPlane(wx,wz,cx,cz,slope){ return H_CTR + ((wx-cx)*tdx+(wz-cz)*tdz)*slope; }
+
+  /* Ecken einer Platzierung in Weltkoordinaten (nur XZ-Fussabdruck) */
+  function cornersOf(s,cx,cz,rotDeg){ const ang=rotDeg*DEG,ca=Math.cos(ang),sa=Math.sin(ang);
+    return sailLocalCorners(s).map(v=>({wx:cx+v.x*ca-v.z*sa, wz:cz+v.x*sa+v.z*ca})); }
+  /* Harte Bedingung: ALLE Ecken im Garten minus Abstand -> keine Wand-Kollision (Garten konvex) */
+  function fits(corners){ return corners.every(c=> c.wx>=-hw+CLEAR && c.wx<=hw-CLEAR && c.wz>=-hd+CLEAR && c.wz<=hd-CLEAR); }
+
+  /* Bodenschatten einer Platzierung mit Kipp-Ebene */
+  function groundPolyWithTilt(s,cx,cz,rotDeg,slope,dir){
+    const ang=rotDeg*DEG,ca=Math.cos(ang),sa=Math.sin(ang);
+    return sailLocalCorners(s).map(v=>{ const wx=cx+v.x*ca-v.z*sa, wz=cz+v.x*sa+v.z*ca;
+      const h=Math.max(H_MIN,Math.min(H_MAX,tiltPlane(wx,wz,cx,cz,slope)));
+      return projToGround(new THREE.Vector3(wx,h,wz),dir); }); }
+
+  /* Score = NETTO-Schatten wie die echte KPI: Zelle zaehlt nur, wenn im Segelschatten
+     UND nicht bereits durch Wand/Pergola (blockersPerStep) oder ein vorheriges Segel (prev) beschattet. */
+  function scoreSailAt(s,cx,cz,rotDeg,slope,prev){
+    let sc=0;
+    for(let ti=0;ti<sunDirs.length;ti++){
+      const {dir,wgt}=sunDirs[ti];
+      const poly=groundPolyWithTilt(s,cx,cz,rotDeg,slope,dir);
+      const blk=blockersPerStep[ti]; const pv=prev?prev[ti]:null;
+      for(const c of cells){
+        if(!pointInPoly(c,poly)) continue;
+        let bad=false;
+        for(const bp of blk){ if(pointInPoly(c,bp)){ bad=true; break; } }
+        if(bad) continue;
+        if(pv){ for(const pp of pv){ if(pointInPoly(c,pp)){ bad=true; break; } } if(bad) continue; }
+        sc+=cellA*wgt; } }
+    return sc; }
+
+  /* ---- Kontinuierliche Schranken fuer die globalen Modelle (Gauss/Darwin/Boltzmann) ---- */
+  const SLOPE_MIN=-0.25, SLOPE_MAX=0.25;
+  const CXMIN=-hw+CLEAR, CXMAX=hw-CLEAR, CZMIN=-hd+CLEAR, CZMAX=hd-CLEAR;
+  function clampVar(p){ p.cx=Math.max(CXMIN,Math.min(CXMAX,p.cx)); p.cz=Math.max(CZMIN,Math.min(CZMAX,p.cz));
+    p.rot=((p.rot%180)+180)%180; p.slope=Math.max(SLOPE_MIN,Math.min(SLOPE_MAX,p.slope)); return p; }
+
+  /* Machbarkeit eines GANZEN Layouts: alle Segel passen in den Garten UND ueberlappen
+     sich nicht im Fussabdruck (sonst kollidieren die Segelkoerper). */
+  function placementsFeasible(P){ const fps=[];
+    for(let i=0;i<P.length;i++){ const corners=cornersOf(activeSails[i].s,P[i].cx,P[i].cz,P[i].rot);
+      if(!fits(corners)) return false;
+      const fp=corners.map(c=>({x:c.wx,z:c.wz}));
+      for(const pf of fps){ if(polysOverlap(fp,pf)) return false; }
+      fps.push(fp); }
+    return true; }
+
+  /* SURROGAT-KPI / Synergie-Score: Netto-Beschattung der Sitzflaeche als VEREINIGUNG
+     beider Segel (jede Zelle zaehlt nur einmal) abzueglich Wand/Pergola. Das ist die
+     gemeinsame Zielfunktion -> synergetische Konstellationen werden NICHT bestraft
+     (behebt das sequentielle Greedy-Problem). Schnell genug fuer DE/SA (18x18, 30-min). */
+  function jointScore(P){
+    if(!placementsFeasible(P)) return -Infinity;
+    let sc=0;
+    for(let ti=0;ti<sunDirs.length;ti++){ const {dir,wgt}=sunDirs[ti]; const blk=blockersPerStep[ti];
+      const polys=P.map((p,i)=>groundPolyWithTilt(activeSails[i].s,p.cx,p.cz,p.rot,p.slope,dir));
+      for(const c of cells){
+        let bad=false; for(const bp of blk){ if(pointInPoly(c,bp)){ bad=true; break; } } if(bad) continue;
+        let hit=false; for(const poly of polys){ if(pointInPoly(c,poly)){ hit=true; break; } }
+        if(hit) sc+=cellA*wgt; } }
+    return sc; }
+  function clonePlacements(P){ return P.map(p=>({cx:p.cx,cz:p.cz,rot:p.rot,slope:p.slope})); }
+
+  /* ---- Grobes Suchraster: ~50-cm-Schritte ueber den Garten, 15-Grad-Rotation ---- */
+  const xSt=Math.max(0.5,w/16),zSt=Math.max(0.5,d/16);
+  const cxArr=[],czArr=[],rotArr=[];
+  for(let x=-hw+CLEAR;x<=hw-CLEAR+1e-3;x+=xSt) cxArr.push(x);
+  for(let z=-hd+CLEAR;z<=hd-CLEAR+1e-3;z+=zSt) czArr.push(z);
+  for(let r=0;r<180;r+=15) rotArr.push(r);
+
+  /* ---- Phase 1: ein Segel optimal frei platzieren (Greedy mit Netto-Score + Hill-Climb) ---- */
+  /* prevFootprints: 2D-Fußabdrücke bereits platzierter Segel (XZ-Ebene).
+     Positionen die sich mit diesen überschneiden werden übersprungen. */
+  /* Top-K Kandidaten aus dem Grobraster (kein Hill-Climb, kein prev-Ausschluss) */
+  function collectTopKGrid(s, K){
+    const cands=[];
+    for(const cx of cxArr) for(const cz of czArr){
+      for(const rot of rotArr){
+        const corners=cornersOf(s,cx,cz,rot);
+        if(!fits(corners)) continue;
+        for(const slope of tiltArr){
+          const sc=scoreSailAt(s,cx,cz,rot,slope,null);
+          if(cands.length<K || sc>cands[cands.length-1].score){
+            cands.push({cx,cz,rot,slope,score:sc});
+            cands.sort((a,b)=>b.score-a.score);
+            if(cands.length>K) cands.pop();
+          }
+        }
+      }
+    }
+    return cands;
+  }
+
+  function placeOneSail(s,prevSailPolys,prevFootprints){
+    let best=-1,bx=0,bz=0,br=0,bt=0,found=false;
+    for(const cx of cxArr) for(const cz of czArr){
+      for(const rot of rotArr){
+        const corners=cornersOf(s,cx,cz,rot);
+        if(!fits(corners)) continue;
+        // Überlappungsausschluss: Segel-Körper darf vorherige Segel-Körper nicht schneiden
+        const fp=corners.map(c=>({x:c.wx,z:c.wz}));
+        if(prevFootprints&&prevFootprints.some(pf=>polysOverlap(fp,pf))) continue;
+        for(const slope of tiltArr){
+          const sc=scoreSailAt(s,cx,cz,rot,slope,prevSailPolys);
+          if(sc>best){ best=sc;bx=cx;bz=cz;br=rot;bt=slope;found=true; } } } }
+    if(!found) return null;
+    let step=Math.max(xSt,zSt)/2;
+    for(let iter=0;iter<6;iter++){
+      let improved=false;
+      const cand=[[bx+step,bz,br],[bx-step,bz,br],[bx,bz+step,br],[bx,bz-step,br],[bx,bz,br+7],[bx,bz,br-7]];
+      for(const [cx,cz,rr0] of cand){ const rr=((rr0%180)+180)%180;
+        const corners=cornersOf(s,cx,cz,rr);
+        if(!fits(corners)) continue;
+        const fp=corners.map(c=>({x:c.wx,z:c.wz}));
+        if(prevFootprints&&prevFootprints.some(pf=>polysOverlap(fp,pf))) continue;
+        for(const slope of tiltArr){ const sc=scoreSailAt(s,cx,cz,rr,slope,prevSailPolys);
+          if(sc>best){ best=sc;bx=cx;bz=cz;br=rr;bt=slope;improved=true; } } }
+      if(!improved) step/=2;
+    }
+    return {cx:bx,cz:bz,rot:br,slope:bt,score:best};
+  }
+
+  /* Greedy-Durchlauf in gegebener Segel-Reihenfolge -> Platzierungen + Gesamtscore */
+  function greedyRun(order){
+    const placements=new Array(activeSails.length).fill(null);
+    let prevSailPolys=null, prevFootprints=[], total=0, ok=true;
+    for(const ai of order){ const {s}=activeSails[ai];
+      const pl=placeOneSail(s,prevSailPolys,prevFootprints);
+      if(!pl){ ok=false; break; }
+      placements[ai]=pl; total+=pl.score;
+      const polys=sunDirs.map(({dir})=>groundPolyWithTilt(s,pl.cx,pl.cz,pl.rot,pl.slope,dir));
+      if(!prevSailPolys) prevSailPolys=sunDirs.map(()=>[]);
+      prevSailPolys=prevSailPolys.map((arr,ti)=>arr.concat([polys[ti]]));
+      // Fußabdruck des gerade platzierten Segels für nächste Segel merken
+      prevFootprints.push(cornersOf(s,pl.cx,pl.cz,pl.rot).map(c=>({x:c.wx,z:c.wz})));
+    }
+    return {placements,total,ok};
+  }
+
+  /* ============================================================
+     MODELL-REGISTRY  (Auswahl per Dropdown -> S.optimizerModel)
+     Jedes Modell erzeugt KANDIDATEN-Platzierungen {cx,cz,rot,slope}. ALLE Kandidaten
+     werden danach an Pfosten gebunden und auf der ECHTEN KPI (computeDayShade)
+     bewertet -> der ε-beste gewinnt. 'greedy-v6' laeuft IMMER als Baseline mit, damit
+     kein Modell schlechter als v6.1 werden kann (Regressionsschutz greift zusaetzlich).
+     ============================================================ */
+  const TOP_K=5;
+
+  /* ---- Modell 'greedy-v6' (Baseline = v6.1): bidirektionaler Greedy + Top-K ---- */
+  function genGreedy(){
+    const cands=[];
+    const greedyOrders = activeSails.length===2 ? [[0,1],[1,0]] : [activeSails.map((_,i)=>i)];
+    for(const ord of greedyOrders){ const r=greedyRun(ord); if(r.ok) cands.push(r); }
+    if(activeSails.length===2){
+      let bestCombo=null, bestComboScore=-1;
+      const topK0=collectTopKGrid(activeSails[0].s,TOP_K);
+      for(const p0 of topK0){
+        const polys0=sunDirs.map(({dir})=>groundPolyWithTilt(activeSails[0].s,p0.cx,p0.cz,p0.rot,p0.slope,dir));
+        const fp0=cornersOf(activeSails[0].s,p0.cx,p0.cz,p0.rot).map(c=>({x:c.wx,z:c.wz}));
+        const prevPolys0=sunDirs.map((_,ti)=>[polys0[ti]]);
+        const pl1=placeOneSail(activeSails[1].s,prevPolys0,[fp0]);
+        if(!pl1) continue;
+        const combo=p0.score+pl1.score;
+        if(combo>bestComboScore){ bestComboScore=combo;
+          bestCombo=[{cx:p0.cx,cz:p0.cz,rot:p0.rot,slope:p0.slope},{cx:pl1.cx,cz:pl1.cz,rot:pl1.rot,slope:pl1.slope}]; }
+      }
+      const topK1=collectTopKGrid(activeSails[1].s,TOP_K);
+      for(const p1 of topK1){
+        const polys1=sunDirs.map(({dir})=>groundPolyWithTilt(activeSails[1].s,p1.cx,p1.cz,p1.rot,p1.slope,dir));
+        const fp1=cornersOf(activeSails[1].s,p1.cx,p1.cz,p1.rot).map(c=>({x:c.wx,z:c.wz}));
+        const prevPolys1=sunDirs.map((_,ti)=>[polys1[ti]]);
+        const pl0=placeOneSail(activeSails[0].s,prevPolys1,[fp1]);
+        if(!pl0) continue;
+        const combo=p1.score+pl0.score;
+        if(combo>bestComboScore){ bestComboScore=combo;
+          bestCombo=[{cx:pl0.cx,cz:pl0.cz,rot:pl0.rot,slope:pl0.slope},{cx:p1.cx,cz:p1.cz,rot:p1.rot,slope:p1.slope}]; }
+      }
+      if(bestCombo) cands.push({ ok:true, total:bestComboScore, placements:bestCombo });
+    }
+    return cands;
+  }
+
+  /* ---- Modell 'kepler': analytischer Schwerpunkt-Seed (§ Plan 2).
+     Projektionsformel: ein Segel auf Hoehe H wirft seinen Mittelpunkt-Schatten auf
+     (cx - dir.x*H/dir.y, cz - dir.z*H/dir.y). Aufgeloest nach cx, damit der Schatten
+     zur Mittagszeit auf den Sitzflaechen-Schwerpunkt faellt. Bei 2 Segeln wird die
+     Sitzflaeche halbiert -> beide Segel decken sich ergaenzend (synergetisch). ---- */
+  function genKepler(){
+    const midDir=sunDirs[Math.floor(sunDirs.length/2)].dir;
+    function centroidOf(filter){ let sx=0,sz=0,n=0;
+      for(const c of cells){ if(filter&&!filter(c)) continue; sx+=c.x; sz+=c.z; n++; }
+      return n?{x:sx/n,z:sz/n}:{x:0,z:0}; }
+    function seedCenter(G){ return { cx:G.x+midDir.x*H_CTR/midDir.y, cz:G.z+midDir.z*H_CTR/midDir.y }; }
+    function bestAt(s,c0,prev){
+      let cx=c0.cx, cz=c0.cz;
+      for(let k=0;k<10;k++){ if(fits(cornersOf(s,cx,cz,0))||fits(cornersOf(s,cx,cz,90))) break; cx*=0.85; cz*=0.85; }
+      let best=null;
+      for(const rot of rotArr){ if(!fits(cornersOf(s,cx,cz,rot))) continue;
+        for(const slope of tiltArr){ const sc=scoreSailAt(s,cx,cz,rot,slope,prev);
+          if(!best||sc>best.score) best={cx,cz,rot,slope,score:sc}; } }
+      return best;
+    }
+    let minx=Infinity,maxx=-Infinity,minz=Infinity,maxz=-Infinity;
+    for(const c of cells){ if(c.x<minx)minx=c.x; if(c.x>maxx)maxx=c.x; if(c.z<minz)minz=c.z; if(c.z>maxz)maxz=c.z; }
+    const cands=[];
+    if(activeSails.length===1){
+      const pl=bestAt(activeSails[0].s, seedCenter(centroidOf(null)), null);
+      if(pl) cands.push({ok:true,placements:[pl]});
+    } else if(activeSails.length===2){
+      const splitX=(maxx-minx)>=(maxz-minz);
+      const midx=(minx+maxx)/2, midz=(minz+maxz)/2;
+      const halfA = splitX ? (c=>c.x<=midx) : (c=>c.z<=midz);
+      const halfB = splitX ? (c=>c.x> midx) : (c=>c.z> midz);
+      for(const [fa,fb] of [[halfA,halfB],[halfB,halfA]]){
+        const p0=bestAt(activeSails[0].s, seedCenter(centroidOf(fa)), null);
+        if(!p0) continue;
+        const prev=sunDirs.map(({dir})=>[groundPolyWithTilt(activeSails[0].s,p0.cx,p0.cz,p0.rot,p0.slope,dir)]);
+        const p1=bestAt(activeSails[1].s, seedCenter(centroidOf(fb)), prev);
+        if(!p1) continue;
+        cands.push({ok:true,placements:[p0,p1]});
+      }
+    }
+    return cands;
+  }
+
+  /* ---- Modell 'gauss': gemeinsamer (Block-)Koordinatenabstieg auf jointScore.
+     Variiert beide Segel inkl. GEMEINSAMER Verschiebungen -> behebt das sequentielle
+     Greedy-Problem (Synergie). Coarse-to-Fine, Start = bester Seed. ---- */
+  function gaussRefine(seed){
+    let P=clonePlacements(seed).map(clampVar);
+    let cur=jointScore(P);
+    if(cur===-Infinity) return null;
+    for(const [ds,dr,dsl] of [[0.6,12,0.12],[0.3,6,0.06],[0.15,4,0.03],[0.07,2,0.015]]){
+      let improved=true, guard=0;
+      while(improved && guard++<25){ improved=false;
+        for(let i=0;i<P.length;i++){
+          const moves=[['cx',ds],['cx',-ds],['cz',ds],['cz',-ds],['rot',dr],['rot',-dr],['slope',dsl],['slope',-dsl]];
+          for(const [key,delta] of moves){ const old=P[i][key]; P[i][key]=old+delta; clampVar(P[i]);
+            const v=jointScore(P); if(v>cur+1e-6){ cur=v; improved=true; } else { P[i][key]=old; } } }
+        if(P.length===2){
+          for(const [jx,jz] of [[ds,0],[-ds,0],[0,ds],[0,-ds]]){
+            const bak=P.map(p=>({cx:p.cx,cz:p.cz}));
+            P.forEach(p=>{ p.cx+=jx; p.cz+=jz; clampVar(p); });
+            const v=jointScore(P); if(v>cur+1e-6){ cur=v; improved=true; }
+            else P.forEach((p,ii)=>{ p.cx=bak[ii].cx; p.cz=bak[ii].cz; }); }
+        }
+      }
+    }
+    return P;
+  }
+
+  /* ---- Zufalls-/Vektor-Helfer fuer die globalen Modelle ---- */
+  function randIn(a,b){ return a+Math.random()*(b-a); }
+  function randPlacement(){ const P=[];
+    for(let i=0;i<activeSails.length;i++) P.push({cx:randIn(CXMIN,CXMAX),cz:randIn(CZMIN,CZMAX),rot:randIn(0,180),slope:randIn(SLOPE_MIN,SLOPE_MAX)});
+    return P; }
+  function flat(P){ const v=[]; for(const p of P) v.push(p.cx,p.cz,p.rot,p.slope); return v; }
+  function unflat(v){ const P=[]; for(let i=0;i<activeSails.length;i++){ const o=i*4;
+    P.push(clampVar({cx:v[o],cz:v[o+1],rot:v[o+2],slope:v[o+3]})); } return P; }
+
+  /* ---- Modell 'darwin': Differential Evolution auf jointScore (globale Suche). ---- */
+  function genDarwin(seeds){
+    const D=activeSails.length*4, NP=Math.max(12,Math.min(24,D*4)), GEN=22, F=0.7, CR=0.9;
+    const pop=[], fit=[];
+    for(const s of seeds){ if(pop.length>=Math.floor(NP/2)) break; pop.push(flat(clonePlacements(s).map(clampVar))); }
+    while(pop.length<NP) pop.push(flat(randPlacement()));
+    for(const ind of pop) fit.push(jointScore(unflat(ind)));
+    for(let g=0;g<GEN;g++){
+      for(let i=0;i<NP;i++){
+        let a,b,c; do{a=(Math.random()*NP)|0;}while(a===i); do{b=(Math.random()*NP)|0;}while(b===i||b===a); do{c=(Math.random()*NP)|0;}while(c===i||c===a||c===b);
+        const trial=pop[i].slice(), R=(Math.random()*D)|0;
+        for(let j=0;j<D;j++){ if(Math.random()<CR||j===R) trial[j]=pop[a][j]+F*(pop[b][j]-pop[c][j]); }
+        const f=jointScore(unflat(trial));
+        if(f>=fit[i]){ pop[i]=trial; fit[i]=f; }
+      }
+    }
+    const order=pop.map((_,i)=>i).sort((x,y)=>fit[y]-fit[x]);
+    const out=[];
+    for(let k=0;k<Math.min(2,order.length);k++){ if(fit[order[k]]>-Infinity) out.push({ok:true,placements:unflat(pop[order[k]])}); }
+    return out;
+  }
+
+  /* ---- Modell 'boltzmann': Simulated Annealing auf jointScore, mit Neustarts. ---- */
+  function genBoltzmann(seed){
+    const out=[], spanX=(CXMAX-CXMIN), spanZ=(CZMAX-CZMIN);
+    for(let r=0;r<2;r++){
+      let cur = r===0 ? clonePlacements(seed).map(clampVar) : randPlacement();
+      let curF=jointScore(cur);
+      if(curF===-Infinity){ cur=randPlacement(); curF=jointScore(cur); }
+      let best=clonePlacements(cur), bestF=curF;
+      let T=Math.max(5, Math.abs(curF)*0.15+5);
+      const ITERS=260;
+      for(let it=0;it<ITERS;it++){
+        const scale=0.05+0.45*(1-it/ITERS);
+        const cand=clonePlacements(cur), i=(Math.random()*cand.length)|0;
+        cand[i].cx+=(Math.random()*2-1)*spanX*0.25*scale;
+        cand[i].cz+=(Math.random()*2-1)*spanZ*0.25*scale;
+        cand[i].rot+=(Math.random()*2-1)*40*scale;
+        cand[i].slope+=(Math.random()*2-1)*0.15*scale;
+        clampVar(cand[i]);
+        const f=jointScore(cand);
+        if(f>=curF || (f>-Infinity && Math.random()<Math.exp((f-curF)/T))){ cur=cand; curF=f;
+          if(f>bestF){ best=clonePlacements(cand); bestF=f; } }
+        T*=0.985;
+      }
+      if(bestF>-Infinity) out.push({ok:true,placements:best});
+    }
+    return out;
+  }
+
+  /* ---- Dispatch: Greedy IMMER als Baseline, dann modellspezifische Kandidaten ---- */
+  let candidates = genGreedy();
+  if(MODEL!=='greedy-v6'){
+    candidates = candidates.concat(genKepler());
+    const seeds = candidates.filter(c=>c.placements&&c.placements.every(p=>p)).map(c=>clonePlacements(c.placements));
+    if(!seeds.length) seeds.push(randPlacement());
+    let bestSeed=seeds[0], bestSeedF=jointScore(bestSeed);
+    for(const s of seeds){ const f=jointScore(s); if(f>bestSeedF){ bestSeedF=f; bestSeed=s; } }
+    if(MODEL==='gauss'){ const g=gaussRefine(bestSeed); if(g) candidates.push({ok:true,placements:g}); }
+    else if(MODEL==='darwin'){ candidates = candidates.concat(genDarwin(seeds)); }
+    else if(MODEL==='boltzmann'){ candidates = candidates.concat(genBoltzmann(bestSeed)); }
+    /* 'kepler': bereits oben ergaenzt */
+  }
+
+  if(!candidates.length){
+    /* Kein Kandidat passt in den Garten -> Originalzustand beibehalten */
+    return t('opt-reverted').replace('{a}',fmt(beforeKPI)).replace('{b}',fmt(beforeKPI));
+  }
+
+  /* ---- Phase 2 + Feinschliff als Funktion: bindet eine Platzierung an Pfosten,
+     poliert auf der ECHTEN KPI und liefert die echte Panel-Zahl zurueck.
+     Wird fuer JEDEN Kandidaten ausgefuehrt -> der KPI-beste gewinnt (alt vs. neu). ---- */
+  function bindAndPolish(placements){
+    const results=activeSails.map((as,i)=>({si:as.si,s:as.s,
+      cx:placements[i].cx, cz:placements[i].cz,
+      rot:placements[i].rot, slope:placements[i].slope}));
+
+    /* Phase 2: Pfosten an die Waende, Segel schwebt frei (Seile ueberbruecken) */
+    for(const res of results){ res.corners=cornersOf(res.s,res.cx,res.cz,res.rot); }
+    function toWall(cx,cz,px,pz){ let ux=px-cx,uz=pz-cz; const L=Math.hypot(ux,uz)||1e-6; ux/=L; uz/=L;
+      let tBest=Infinity;
+      if(ux>1e-6) tBest=Math.min(tBest,(hw-cx)/ux); else if(ux<-1e-6) tBest=Math.min(tBest,(-hw-cx)/ux);
+      if(uz>1e-6) tBest=Math.min(tBest,(hd-cz)/uz); else if(uz<-1e-6) tBest=Math.min(tBest,(-hd-cz)/uz);
+      if(!isFinite(tBest)) tBest=L;
+      return { wx:cx+ux*tBest, wz:cz+uz*tBest }; }
+    const rawPosts=[];
+    for(const res of results){ res.rawIdx=[];
+      for(const c of res.corners){
+        const wp=S.optimizer_freePosts
+          ? {wx:c.wx,wz:c.wz}
+          : toWall(res.cx,res.cz,c.wx,c.wz);
+        const h=Math.max(H_MIN,Math.min(H_MAX,tiltPlane(wp.wx,wp.wz,res.cx,res.cz,res.slope)));
+        rawPosts.push({wx:wp.wx,wz:wp.wz,h,sail:res.si}); res.rawIdx.push(rawPosts.length-1); } }
+    const clusters=[]; const rawToCluster=[];
+    for(const rp of rawPosts){ let found=-1;
+      for(let ci=0;ci<clusters.length;ci++){ if(clusters[ci].sails.has(rp.sail)) continue;
+        const dx=clusters[ci].wx-rp.wx,dz=clusters[ci].wz-rp.wz;
+        if(Math.hypot(dx,dz)<0.6){ found=ci; break; } }
+      if(found>=0){ const cl=clusters[found];
+        cl.wx=(cl.wx*cl.n+rp.wx)/(cl.n+1); cl.wz=(cl.wz*cl.n+rp.wz)/(cl.n+1); cl.h=(cl.h*cl.n+rp.h)/(cl.n+1);
+        cl.n++; cl.sails.add(rp.sail); rawToCluster.push(found); }
+      else { clusters.push({wx:rp.wx,wz:rp.wz,h:rp.h,n:1,sails:new Set([rp.sail])}); rawToCluster.push(clusters.length-1); } }
+    while(clusters.length>6){
+      let minD=Infinity,mi=0,mj=1,foundDisjoint=false;
+      for(let i=0;i<clusters.length;i++) for(let j=i+1;j<clusters.length;j++){
+        const disjoint=![...clusters[i].sails].some(x=>clusters[j].sails.has(x));
+        const dx=clusters[i].wx-clusters[j].wx,dz=clusters[i].wz-clusters[j].wz,dd=dx*dx+dz*dz;
+        if(disjoint&&!foundDisjoint){ foundDisjoint=true; minD=dd;mi=i;mj=j; }
+        else if(disjoint===foundDisjoint && dd<minD){ minD=dd;mi=i;mj=j; } }
+      clusters[mi].wx=(clusters[mi].wx+clusters[mj].wx)/2; clusters[mi].wz=(clusters[mi].wz+clusters[mj].wz)/2;
+      clusters[mi].h=(clusters[mi].h+clusters[mj].h)/2; clusters[mj].sails.forEach(x=>clusters[mi].sails.add(x));
+      rawToCluster.forEach((c,k)=>{ if(c===mj) rawToCluster[k]=mi; else if(c>mj) rawToCluster[k]=c-1; });
+      clusters.splice(mj,1); }
+
+    const newPoints=clusters.map(c=>({ x:c.wx-B.x, y:c.wz-B.z, h:Math.round(Math.max(H_MIN,Math.min(H_MAX,c.h))*10)/10 }));
+    while(newPoints.length<6){ const last=newPoints[newPoints.length-1]||{x:hw-CLEAR-B.x,y:hd-CLEAR-B.z,h:H_CTR}; newPoints.push({x:last.x,y:last.y,h:last.h}); }
+    S.points=newPoints;
+
+    for(const res of results){ const s=S.sails[res.si];
+      const idx=res.rawIdx.map(ri=>rawToCluster[ri]); s.posts=idx;
+      const pg=idx.map(ci=>({x:clusters[ci].wx,z:clusters[ci].wz}));
+      const G={x:pg.reduce((q,p)=>q+p.x,0)/pg.length, z:pg.reduce((q,p)=>q+p.z,0)/pg.length};
+      s.dx=res.cx-G.x; s.dz=res.cz-G.z;
+      const local=sailLocalCorners(res.s).map(v=>({x:v.x,z:v.z}));
+      const base=bestAngle2D(local,pg,G);
+      let rotDeg=res.rot-base/DEG; rotDeg=((rotDeg%360)+360)%360; if(rotDeg>180) rotDeg-=360;
+      s.rot=rotDeg;
+    }
+
+    /* Feinschliff (v5.2): Coarse-to-Fine auf der ECHTEN KPI -> nur dx/dz/rot lokal nachjustiert */
+    (function polishKPI(){
+      let cur=kpiNow();
+      for(let round=0;round<2;round++){
+        let roundImproved=false;
+        for(let si=0;si<S.sails.length;si++){ const s=S.sails[si]; if(!s.on) continue;
+          for(const stp of [0.30,0.15,0.05]){
+            let improved=true, guard=0;
+            while(improved && guard++<40){ improved=false;
+              const cands=[[stp,0],[-stp,0],[0,stp],[0,-stp],[stp,stp],[stp,-stp],[-stp,stp],[-stp,-stp]];
+              for(const [ddx,ddz] of cands){ const ox=s.dx,oz=s.dz;
+                s.dx=ox+ddx; s.dz=oz+ddz; const v=kpiNow();
+                if(v>cur+1e-6){ cur=v; improved=true; roundImproved=true; }
+                else { s.dx=ox; s.dz=oz; } } }
+            const rdeg = stp < 0.1 ? 1 : stp < 0.2 ? 2 : 5;
+            for(const dd of [rdeg,-rdeg]){
+              const or=s.rot; s.rot=or+dd; const v=kpiNow();
+              if(v>cur+1e-6){ cur=v; roundImproved=true; }
+              else s.rot=or;
+            }
+          }
+        }
+        if(!roundImproved) break;
+      }
+    })();
+    /* Echte KPI + Sekundaerkriterien (Ueberlappung, max. Pfostenhoehe) zurueckgeben */
+    const rr=computeDayShade();
+    let maxH=0; for(const as of activeSails){ for(const pi of S.sails[as.si].posts){ if(S.points[pi]&&S.points[pi].h>maxH) maxH=S.points[pi].h; } }
+    return { kpi: useRect? rr.total_rect_m2h : rr.total_m2h,
+             overlap: useRect? rr.overlap_rect_m2h : rr.overlap_m2h, maxH };
+  }
+
+  /* ---- Alle Kandidaten binden+polieren, das nach echter KPI BESTE Ergebnis merken.
+     ε-Toleranz: liegt ein Kandidat innerhalb ±EPS m²·h, entscheiden Sekundaerkriterien
+     (1. weniger Ueberlappung = weniger Verschwendung, 2. niedrigere max. Pfostenhoehe). ---- */
+  function candBetter(a,b){
+    if(a.kpi > b.kpi + EPS) return true;
+    if(b.kpi > a.kpi + EPS) return false;
+    if(Math.abs(a.overlap-b.overlap) > 1e-6) return a.overlap < b.overlap;
+    return a.maxH < b.maxH;
+  }
+  let best=null;
+  for(const cand of candidates){
+    const r=bindAndPolish(cand.placements);
+    const snap={ kpi:r.kpi, overlap:r.overlap, maxH:r.maxH,
+      points:JSON.parse(JSON.stringify(S.points)),
+      sails:S.sails.map(s=>({posts:[...s.posts],dx:s.dx,dz:s.dz,rot:s.rot})) };
+    if(best===null || candBetter(snap,best)) best=snap;
+  }
+  /* Bestes Ergebnis in den State zurueckschreiben */
+  S.points=JSON.parse(JSON.stringify(best.points));
+  best.sails.forEach((sv,i)=>{ S.sails[i].posts=[...sv.posts]; S.sails[i].dx=sv.dx; S.sails[i].dz=sv.dz; S.sails[i].rot=sv.rot; });
+
+  /* ---- Regressions-Schutz mit ε: neues Layout nur bei SIGNIFIKANTER Verbesserung
+     (after > before + EPS). Innerhalb der Toleranz gilt es als gleich -> Altzustand
+     behalten (kein Layout-Wechsel ohne echten Mehrwert). ---- */
+  const afterKPI=best.kpi;
+  let key='opt-improved';
+  if(!(afterKPI > beforeKPI + EPS)){
+    S.points=beforeSnap.points;
+    beforeSnap.sails.forEach((sv,i)=>{ S.sails[i].posts=sv.posts; S.sails[i].dx=sv.dx; S.sails[i].dz=sv.dz; S.sails[i].rot=sv.rot; });
+    key='opt-reverted';
+  }
+  buildPointEditors(); buildSailEditors(); updateAll(); touch();
+  /* Meldung wird vom Aufrufer NACH applyTranslations() gesetzt */
+  return t(key).replace('{a}',fmt(afterKPI)).replace('{b}',fmt(beforeKPI));
+}
+/* ---- Toast-Benachrichtigung im Hauptfenster ---- */
+function showToast(msg,ms=7000){
+  const el=document.getElementById('toast'); if(!el) return;
+  el.textContent=msg; el.style.display='block'; el.style.opacity='1';
+  clearTimeout(showToast._t);
+  showToast._t=setTimeout(()=>{ el.style.opacity='0'; setTimeout(()=>{ el.style.display='none'; el.style.opacity='1'; },300); },ms);
+}
+
+/* ---- Segel-Fußabdruck-Überlappung (SAT, normalisierte Achsen, ε=2cm) ---- */
+/* Wird NUR im Optimierer verwendet – verhindert dass Kandidatenpositionen
+   geprüft werden, bei denen sich Segel-Körper überschneiden würden.
+   ε=0.02m: Float-Artefakt bei gemeinsamen Polen (Segel die sich berühren)
+   werden NICHT als überlappend gewertet. */
+function polysOverlap(A,B){
+  const EPS=0.02; // 2cm: sails may touch, but not truly cross
+  for(const poly of [A,B]){
+    for(let i=0;i<poly.length;i++){
+      const a=poly[i],b=poly[(i+1)%poly.length];
+      const nx=-(b.z-a.z),nz=b.x-a.x;
+      const len=Math.hypot(nx,nz); if(len<1e-9) continue;
+      const ux=nx/len,uz=nz/len; // normalisiert → Projektion in Metern
+      let minA=Infinity,maxA=-Infinity,minB=Infinity,maxB=-Infinity;
+      for(const p of A){ const d=p.x*ux+p.z*uz; if(d<minA)minA=d; if(d>maxA)maxA=d; }
+      for(const p of B){ const d=p.x*ux+p.z*uz; if(d<minB)minB=d; if(d>maxB)maxB=d; }
+      if(maxA<=minB+EPS||maxB<=minA+EPS) return false; // getrennt (inkl. Berührung)
+    }
+  }
+  return true; // echte Überlappung > 2cm
+}
+
+function renderDayShade(){
+  const r=computeDayShade(); S.shadeAnalysis=r;
+  const out=document.getElementById('dayShade'); if(!out) return;
+  if(!r.perSail.length){ out.innerHTML=t('dayshade-none'); renderDayHud(r); return; }
+  let html=`<span style="color:var(--muted)">${r.date} · 10–18h</span><br>`;
+  r.perSail.forEach(p=>{ html+=`${t('shadow-sail')} ${p.sail}: <b>${fmt(p.integral_m2h)} m²·h</b> <span style="color:var(--muted)">(Ø ${fmt(p.avg_m2)} m²)</span><br>`; });
+  if(r.perSail.length>1) html+=`${t('dayshade-total')}: <b>${fmt(r.total_m2h)} m²·h</b> <span style="color:var(--muted)">(Ø ${fmt(r.total_avg_m2)} m²)</span><br>`;
+  if(r.perSail.length>1 && r.overlap_m2h>0.05) html+=`<span style="color:#e67e22">⚠︎ ${t('dayshade-overlap')}: ${fmt(r.overlap_m2h)} m²·h</span><br>`;
+  if(r.rectOn){ html+=`<div style="margin-top:6px;color:#f1c40f">▣ ${t('dayshade-rect')}</div>`;
+    r.perSail.forEach(p=>{ html+=`${t('shadow-sail')} ${p.sail}: <b>${fmt(p.integral_rect_m2h)} m²·h</b> <span style="color:var(--muted)">(Ø ${fmt(p.avg_rect_m2)} m²)</span><br>`; });
+    if(r.perSail.length>1) html+=`${t('dayshade-total')}: <b>${fmt(r.total_rect_m2h)} m²·h</b> <span style="color:var(--muted)">(Ø ${fmt(r.total_rect_avg_m2)} m²)</span><br>`;
+    if(r.perSail.length>1 && r.overlap_rect_m2h>0.05) html+=`<span style="color:#e67e22">⚠︎ ${t('dayshade-overlap')}: ${fmt(r.overlap_rect_m2h)} m²·h</span>`; }
+  out.innerHTML=html;
+  renderDayHud(r);
+}
+function renderDayHud(r){
+  const hud=document.getElementById('dayHud'); if(!hud) return;
+  if(!r.perSail.length){ hud.innerHTML=''; return; }
+  let h=`<div class="dh-label">${t('sec-dayshade')} · ${r.date}</div>`;
+  r.perSail.forEach(p=>{ h+=`<span style="color:var(--muted)">${t('shadow-sail')} ${p.sail}:</span> <b>${fmt(p.integral_m2h)} m²·h</b> <span style="color:var(--muted)">(Ø ${fmt(p.avg_m2)} m²)</span><br>`; });
+  if(r.perSail.length>1) h+=`<span style="color:var(--muted)">${t('dayshade-total')}:</span> <b>${fmt(r.total_m2h)} m²·h</b> <span style="color:var(--muted)">(Ø ${fmt(r.total_avg_m2)} m²)</span><br>`;
+  if(r.rectOn){ h+=`<span class="dh-rect">▣ ${t('dayshade-rect')}:</span> `;
+    if(r.perSail.length>1) h+=`<b>${fmt(r.total_rect_m2h)} m²·h</b> <span style="color:var(--muted)">(Ø ${fmt(r.total_rect_avg_m2)} m²)</span>`;
+    else if(r.perSail.length===1){ const p=r.perSail[0]; h+=`<b>${fmt(p.integral_rect_m2h)} m²·h</b> <span style="color:var(--muted)">(Ø ${fmt(p.avg_rect_m2)} m²)</span>`; } }
+  hud.innerHTML=h;
+}
+
+function buildEvalRect(){ evalRectGroup.clear(); const Rw=evalRectWorld(); if(!Rw) return;
+  const y=0.045; const pts=[ new THREE.Vector3(Rw.x0,y,Rw.z0), new THREE.Vector3(Rw.x1,y,Rw.z0),
+    new THREE.Vector3(Rw.x1,y,Rw.z1), new THREE.Vector3(Rw.x0,y,Rw.z1), new THREE.Vector3(Rw.x0,y,Rw.z0) ];
+  const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
+    new THREE.LineDashedMaterial({color:0xf1c40f,dashSize:0.25,gapSize:0.18,depthTest:true,linewidth:2}));
+  line.computeLineDistances(); evalRectGroup.add(line);
+}
+function updateRef(){ refMarker.position.copy(refWorld()); }
+function updateRig(){ buildPoles(); buildSails(); buildRopes(); buildLabels(); }
+function updateRopeReadouts(){ S.sails.forEach((s,si)=>{ const corners=sailCorners(s); corners.forEach((c,k)=>{ const top=poleTop(s.posts[k]); const span=document.querySelector(`.rl[data-si="${si}"][data-k="${k}"]`); if(span) span.textContent=fmt(c.distanceTo(top))+' m'; }); }); }
+function updateAll(){ updateRef(); updateRig(); updateRopeReadouts(); buildFurniture(); buildPerson(); buildEvalRect(); updateSun(); renderDayShade(); }
+
+/* ---- Persistenz ---- */
+let saveTimer=null;
+function touch(){ if(saveTimer) clearTimeout(saveTimer); saveTimer=setTimeout(()=>{ saveState(); snapshot(); },350); }
+function saveState(){ const j=JSON.stringify(S); try{ localStorage.setItem(STORE_KEY,j); }catch(e){} try{ document.cookie=STORE_KEY+'='+encodeURIComponent(j).slice(0,3900)+';path=/;max-age=31536000;SameSite=Lax'; }catch(e){} }
+function loadState(){ try{ const v=localStorage.getItem(STORE_KEY); if(v) return JSON.parse(v); }catch(e){} try{ const m=document.cookie.match('(?:^|;)\\s*'+STORE_KEY+'=([^;]*)'); if(m) return JSON.parse(decodeURIComponent(m[1])); }catch(e){} return null; }
+
+/* ---- Undo/Redo (bis 40 Schritte zurück) ---- */
+const HIST_MAX=41; /* aktueller Stand + 40 frühere */
+let history=[], hidx=-1, suppressHistory=false;
+function snapshot(){ if(suppressHistory) return; const j=JSON.stringify(S);
+  if(history[hidx]===j) return;
+  history=history.slice(0,hidx+1); history.push(j);
+  while(history.length>HIST_MAX) history.shift();
+  hidx=history.length-1; updateHistButtons(); }
+function applyHistory(){ suppressHistory=true; S=migrate(JSON.parse(history[hidx]))||defaultState();
+  refreshUI(); saveState(); suppressHistory=false; updateHistButtons(); }
+function undo(){ if(hidx>0){ hidx--; applyHistory(); } }
+function redo(){ if(hidx<history.length-1){ hidx++; applyHistory(); } }
+function updateHistButtons(){ const u=document.getElementById('undoBtn'),r=document.getElementById('redoBtn');
+  if(u) u.disabled=hidx<=0; if(r) r.disabled=hidx>=history.length-1; }
+
+/* ---- UI ---- */
+const $=id=>document.getElementById(id);
+const fmt=(n,d=1)=>Number(n).toFixed(d).replace('.',',');
+const pn=v=>{ if(typeof v==='string') v=v.replace(',','.'); v=+v; return isNaN(v)?0:v; };
+function link(card,cls,lo,hi,apply){
+  const sl=card.querySelector('.'+cls), nu=card.querySelector('.'+cls+'n');
+  const set=v=>{ v=pn(v); v=Math.min(hi,Math.max(lo,v)); sl.value=v; nu.value=fmt(v,2).replace(/,?0+$/,''); apply(v); touch(); };
+  sl.oninput=()=>set(sl.value); nu.onchange=()=>set(nu.value);
+}
+function bindNum(card,cls,lo,hi,apply){
+  const el=card.querySelector('.'+cls); if(!el) return;
+  el.onchange=()=>{ let v=pn(el.value); v=Math.min(hi,Math.max(lo,v)); el.value=fmt(v,2).replace(/,?0+$/,''); apply(v); updateAll(); touch(); };
+}
+function linkId(slId,numId,lo,hi,apply){
+  const sl=$(slId),nu=$(numId);
+  const set=v=>{ v=pn(v); v=Math.min(hi,Math.max(lo,v)); sl.value=v; nu.value=fmt(v,2).replace(/,?0+$/,''); apply(v); touch(); };
+  sl.oninput=()=>set(sl.value); nu.onchange=()=>set(nu.value);
+  nu.value=fmt(+sl.value,2).replace(/,?0+$/,'');
+}
+function rowHTML(label,cls,min,max,step,val,unit,def){
+  return `<div class="row"><label>${label}</label>`+
+    `<input type="range" class="${cls}" min="${min}" max="${max}" step="${step}" value="${val}"${def!==undefined?` data-default="${def}"`:''}>`+
+    `<input type="text" inputmode="decimal" class="num ${cls}n" value="${fmt(val,2).replace(/,?0+$/,'')}">`+
+    (unit?`<span class="unit">${unit}</span>`:'')+`</div>`;
+}
+function numRowHTML(label,cls,val,unit){
+  return `<div class="row"><label>${label}</label>`+
+    `<input type="text" inputmode="decimal" class="num ${cls}" style="width:auto;flex:1" value="${fmt(val,2).replace(/,?0+$/,'')}">`+
+    (unit?`<span class="unit">${unit}</span>`:'')+`</div>`;
+}
+
+function wireStaticUI(){
+  $('gw').value=S.garden.w; $('gw').dataset.default=DEF.garden.w; linkId('gw','gwn',3,100,v=>{S.garden.w=v;buildGarden();updateAll();buildPointEditors();buildFurnitureEditors();});
+  $('gd').value=S.garden.d; $('gd').dataset.default=DEF.garden.d; linkId('gd','gdn',3,100,v=>{S.garden.d=v;buildGarden();updateAll();buildPointEditors();buildFurnitureEditors();});
+  const wallRow=(slId,numId,key)=>{ $(slId).value=S.garden.walls[key]; $(slId).dataset.default=DEF.garden.walls[key]; linkId(slId,numId,0,7,v=>{S.garden.walls[key]=v;buildGarden();}); };
+  wallRow('wx0','wx0n','x0'); wallRow('wxb','wxbn','xb'); wallRow('wy0','wy0n','y0'); wallRow('wyt','wytn','yt');
+  $('wallop').value=S.garden.wallOpacity; $('wallop').dataset.default=DEF.garden.wallOpacity; linkId('wallop','wallopn',0.1,1,v=>{S.garden.wallOpacity=v;buildGarden();});
+  $('north').value=S.garden.north; $('north').dataset.default=DEF.garden.north; linkId('north','northn',0,360,v=>{S.garden.north=v;updateSun();renderDayShade();});
+  const syncCity=()=>{ const v=`${(+S.loc.lat).toFixed(4)},${(+S.loc.lon).toFixed(4)}`; $('city').value=v; if($('city').selectedIndex<0) $('city').value=''; };
+  $('city').onchange=e=>{ if(!e.target.value) return; const [la,lo]=e.target.value.split(',').map(Number);
+    S.loc.lat=la; S.loc.lon=lo; $('lat').value=fmt(la,4); $('lon').value=fmt(lo,4); updateSun(); renderDayShade(); touch(); };
+  $('lat').value=fmt(S.loc.lat,4); $('lat').oninput=e=>{S.loc.lat=pn(e.target.value);syncCity();updateSun();renderDayShade();touch();};
+  $('lon').value=fmt(S.loc.lon,4); $('lon').oninput=e=>{S.loc.lon=pn(e.target.value);syncCity();updateSun();renderDayShade();touch();};
+  syncCity();
+  $('date').value=S.dateStr; $('date').onchange=e=>{S.dateStr=e.target.value;updateSun();renderDayShade();touch();};
+  $('time').value=S.timeMin; $('time').dataset.default=DEF.timeMin; setTimeInputs();
+  $('time').oninput=e=>{S.timeMin=+e.target.value; setTimeInputs(); updateSun(); touch();};
+  const applyTimeInput=e=>{ const [h,m]=e.target.value.split(':').map(Number); if(!isNaN(h)){ S.timeMin=h*60+(m||0); $('time').value=S.timeMin; updateSun(); touch(); } };
+  $('timeInput').onchange=applyTimeInput; $('timeInput').oninput=applyTimeInput;
+  const slP=$('showPostLabels'); slP.checked=S.showPostLabels; slP.onchange=()=>{ S.showPostLabels=slP.checked; buildLabels(); touch(); };
+  const slD=$('showDims'); slD.checked=S.showDims; slD.onchange=()=>{ S.showDims=slD.checked; buildLabels(); touch(); };
+  const chkFP=$('chkFreePosts'); if(chkFP){ chkFP.checked=S.optimizer_freePosts; chkFP.onchange=()=>{ S.optimizer_freePosts=chkFP.checked; touch(); }; }
+  const selOM=$('selOptModel'); const descOM=$('optModelDesc');
+  const updateModelDesc=()=>{ if(descOM){ const k='opt-model-desc-'+selOM.value.replace('greedy-v6','greedy'); descOM.textContent=t(k); } };
+  if(selOM){ selOM.value=S.optimizerModel; selOM.onchange=()=>{ S.optimizerModel=selOM.value; updateModelDesc(); touch(); }; updateModelDesc(); }
+  const numOT=$('numOptTol'); if(numOT){ numOT.value=S.optimizerTolerance; numOT.onchange=()=>{ const v=parseFloat(String(numOT.value).replace(',','.')); S.optimizerTolerance=(isNaN(v)||v<0)?0:v; numOT.value=S.optimizerTolerance; touch(); }; }
+  const ss=$('showShadow'); if(ss) ss.onchange=()=>updateSun();
+  wireEvalRectInputs();
+  /* Zeitfenster-Inputs */
+  const toTimeStr=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;
+  const aS=$('analysisStart'); if(aS){ aS.value=toTimeStr(S.analysisStart);
+    const applyAS=e=>{ const [h,m]=e.target.value.split(':').map(Number); if(!isNaN(h)){ S.analysisStart=h*60+(m||0); renderDayShade(); touch(); } };
+    aS.onchange=applyAS; aS.oninput=applyAS; }
+  const aE=$('analysisEnd');   if(aE){ aE.value=toTimeStr(S.analysisEnd);
+    const applyAE=e=>{ const [h,m]=e.target.value.split(':').map(Number); if(!isNaN(h)){ S.analysisEnd=h*60+(m||0);   renderDayShade(); touch(); } };
+    aE.onchange=applyAE; aE.oninput=applyAE; }
+  const bf=$('btnFitSails'); if(bf) bf.onclick=()=>fitSailsToPosts();
+  const bff=$('btnFitSailsFloat'); if(bff) bff.onclick=()=>fitSailsToPosts();
+  const bo=$('btnOptimizePosts'); if(bo) bo.onclick=()=>optimizePostAssignment();
+  const bs=$('btnOptimizeSails'); if(bs) bs.onclick=()=>optimizeSailPositions();
+  const bof=$('btnOptimizeFloat'); if(bof) bof.onclick=()=>optimizeSailPositions();  /* Float-Button: onclick im Modul-Scope verdrahten (HTML-onclick kaputt bei type=module) */
+}
+function syncEvalRectInputs(){
+  const r=S.evalRect;
+  const x0=r.x0||0, x1=r.x1||0, y0=r.y0||0, y1=r.y1||0;
+  const cx=(x0+x1)/2, cy=(y0+y1)/2;
+  const w=Math.abs(x1-x0), h=Math.abs(y1-y0);
+  const eron=$('evalRectOn'), ecx=$('evalCx'), ecy=$('evalCy'), ew=$('evalW'), eh=$('evalH');
+  if(eron) eron.checked=!!r.on;
+  if(ecx) ecx.value=fmt(cx,2).replace(/,?0+$/,'');
+  if(ecy) ecy.value=fmt(cy,2).replace(/,?0+$/,'');
+  if(ew)  ew.value=fmt(w===0?3:w,2).replace(/,?0+$/,'');
+  if(eh)  eh.value=fmt(h===0?3:h,2).replace(/,?0+$/,'');
+}
+function wireEvalRectInputs(){
+  function applyEval(){
+    const cx=pn($('evalCx').value), cy=pn($('evalCy').value);
+    const w=Math.max(0.1,pn($('evalW').value)), h=Math.max(0.1,pn($('evalH').value));
+    S.evalRect.x0=cx-w/2; S.evalRect.x1=cx+w/2;
+    S.evalRect.y0=cy-h/2; S.evalRect.y1=cy+h/2;
+    buildEvalRect(); renderDayShade(); touch();
+  }
+  const eron=$('evalRectOn');
+  if(eron){ eron.checked=S.evalRect.on; eron.onchange=()=>{ S.evalRect.on=eron.checked; buildEvalRect(); renderDayShade(); touch(); syncEvalRectInputs(); }; }
+  ['evalCx','evalCy','evalW','evalH'].forEach(id=>{ const el=$(id); if(el) el.onchange=applyEval; });
+  syncEvalRectInputs();
+}
+function setTimeInputs(){ const hh=String(Math.floor(S.timeMin/60)).padStart(2,'0'),mm=String(S.timeMin%60).padStart(2,'0'); $('timeInput').value=`${hh}:${mm}`; }
+
+let playing=false;
+$('play').onclick=()=>{ playing=!playing; $('play').textContent=playing?t('btn-pause'):t('btn-play'); if(playing) loopPlay(); };
+function loopPlay(){ if(!playing) return; S.timeMin=(S.timeMin+4)%1440; $('time').value=S.timeMin; setTimeInputs(); updateSun(); setTimeout(()=>requestAnimationFrame(loopPlay),40); }
+$('now').onclick=()=>{ const n=new Date(); S.dateStr=n.toISOString().slice(0,10); S.timeMin=n.getHours()*60+n.getMinutes(); $('date').value=S.dateStr; $('time').value=S.timeMin; setTimeInputs(); updateSun(); touch(); };
+$('undoBtn').onclick=undo; $('redoBtn').onclick=redo;
+// btnDrawRect und btnClearRect entfernt; Steuerung erfolgt über evalRectOn-Checkbox
+window.addEventListener('keydown',e=>{ if(/INPUT|SELECT|TEXTAREA/.test((e.target&&e.target.tagName)||'')) return;
+  const k=e.key.toLowerCase();
+  if((e.ctrlKey||e.metaKey)&&k==='z'&&!e.shiftKey){ e.preventDefault(); undo(); }
+  else if((e.ctrlKey||e.metaKey)&&(k==='y'||(k==='z'&&e.shiftKey))){ e.preventDefault(); redo(); } });
+
+/* ---- Pfeil hoch/runter für alle .num-Eingabefelder ---- */
+document.addEventListener('keydown',e=>{
+  if(!e.target.classList||!e.target.classList.contains('num')) return;
+  if(e.key!=='ArrowUp'&&e.key!=='ArrowDown') return;
+  e.preventDefault();
+  const nu=e.target;
+  const row=nu.closest('.row');
+  const sl=row?row.querySelector('input[type="range"]'):null;
+  const step=sl?parseFloat(sl.step)||0.1:0.1;
+  const lo=sl?parseFloat(sl.min):-1e9;
+  const hi=sl?parseFloat(sl.max):1e9;
+  let v=pn(nu.value)+(e.key==='ArrowUp'?step:-step);
+  v=Math.min(hi,Math.max(lo,v));
+  const dec=Math.max(0,(String(step).split('.')[1]||'').length);
+  v=parseFloat(v.toFixed(dec+1));
+  nu.value=fmt(v,2).replace(/,?0+$/,'');
+  nu.dispatchEvent(new Event('input',{bubbles:true}));
+  nu.dispatchEvent(new Event('change',{bubbles:true}));
+});
+
+function hardwareOptions(kind,selected){
+  return HARDWARE[kind].map(x=>`<option value="${x.type.replace(/"/g,'&quot;')}" ${x.type===selected?'selected':''}>${x.type}</option>`).join('');
+}
+function hardwareReadout(p){
+  const off=(p.shackle?p.shackle.length:0)+(p.turnbuckle?p.turnbuckle.length:0);
+  return off>0?`+${fmt(off,3)} m`:'–';
+}
+
+function buildPointEditors(){
+  const host=$('points'); host.innerHTML='';
+  const RX=Math.max(15,+S.garden.w), RY=Math.max(15,+S.garden.d);
+  S.points.forEach((p,i)=>{
+    const D=DEF.points[i]||{x:0,y:0,h:2.4}; const card=document.createElement('div'); card.className='card'; card.dataset.postIdx=i;
+    card.innerHTML=`<h3><span><span class="dot" style="background:${postColor(i)}"></span>${t('post-label')} ${i+1}</span><button class="minib remove-post" data-idx="${i}">${t('btn-remove-post')}</button></h3>
+      ${rowHTML(t('lbl-x'),'rx',-RX,RX,0.1,p.x,'m',D.x)}${rowHTML(t('lbl-y'),'ry',-RY,RY,0.1,p.y,'m',D.y)}${rowHTML(t('lbl-height'),'rh',0.3,6,0.1,p.h,'m',D.h)}
+      <div class="row"><label>${t('lbl-shackle')}</label><select class="shackle" style="flex:1">${hardwareOptions('shackles',p.shackle&&p.shackle.type)}</select><span class="hw-readout" style="font-size:11px;color:var(--muted)">${hardwareReadout(p)}</span></div>
+      <div class="row"><label>${t('lbl-turnbuckle')}</label><select class="turnbuckle" style="flex:1">${hardwareOptions('turnbuckles',p.turnbuckle&&p.turnbuckle.type)}</select></div>
+      <p class="hint" style="margin-top:4px">${t('hint-hardware')}</p>`;
+    link(card,'rx',-RX,RX,v=>{p.x=v;updateAll();}); link(card,'ry',-RY,RY,v=>{p.y=v;updateAll();}); link(card,'rh',0.3,6,v=>{p.h=v;updateAll();});
+    const shack=card.querySelector('.shackle'), turn=card.querySelector('.turnbuckle'), ro=card.querySelector('.hw-readout');
+    shack.onchange=e=>{ p.shackle=findHardware('shackles',e.target.value); if(ro) ro.textContent=hardwareReadout(p); updateAll(); touch(); };
+    turn.onchange=e=>{ p.turnbuckle=findHardware('turnbuckles',e.target.value); if(ro) ro.textContent=hardwareReadout(p); updateAll(); touch(); };
+    const rm=card.querySelector('.remove-post'); if(rm) rm.onclick=()=>removePost(i);
+    host.appendChild(card);
+  });
+  const addWrap=document.createElement('div'); addWrap.style.marginTop='8px';
+  addWrap.innerHTML=`<button class="btn secondary" id="btnAddPost" style="width:100%">${t('btn-add-post')}</button>`;
+  addWrap.querySelector('#btnAddPost').onclick=addPost;
+  host.appendChild(addWrap);
+}
+function syncPointInputs(i){ const card=document.querySelector(`#points .card[data-post-idx="${i}"]`); if(!card) return; const p=S.points[i]; if(!p) return;
+  const rx=card.querySelector('.rx'),rxn=card.querySelector('.rxn'),ry=card.querySelector('.ry'),ryn=card.querySelector('.ryn');
+  if(rx){ rx.value=p.x.toFixed(1); rxn.value=fmt(p.x); } if(ry){ ry.value=p.y.toFixed(1); ryn.value=fmt(p.y); } }
+
+function addPost(){
+  const {w,d}=S.garden;
+  S.points.push({x:0, y:0, h:2.4, shackle:HARDWARE.shackles[0], turnbuckle:HARDWARE.turnbuckles[0]});
+  buildPointEditors(); buildSailEditors(); buildPoles(); buildLabels(); buildDimensions(); updateAll(); touch();
+}
+function removePost(i){
+  if(i<0||i>=S.points.length) return;
+  if(S.points.length<=1){ showToast('At least one post is required.'); return; }
+  S.points.splice(i,1);
+  S.sails.forEach(s=>{
+    s.posts=s.posts.map(pi=> pi===i ? -1 : pi>i ? pi-1 : pi);
+    const used=new Set();
+    s.posts=s.posts.map(pi=>{
+      if(pi>=0&&pi<S.points.length&&!used.has(pi)){ used.add(pi); return pi; }
+      for(let k=0;k<S.points.length;k++) if(!used.has(k)){ used.add(k); return k; }
+      return 0;
+    });
+  });
+  buildPointEditors(); buildSailEditors(); buildPoles(); buildLabels(); buildDimensions(); updateAll(); touch();
+}
+
+function postOptions(selected){ return S.points.map((p,i)=>`<option value="${i}" style="color:${postColor(i)}" ${i===selected?'selected':''}>● ${t('post-label')} ${i+1}</option>`).join(''); }
+function nextFreePost(s){ for(let i=0;i<S.points.length;i++) if(!s.posts.includes(i)) return i; return 0; }
+function newSailDefaults(){
+  const shape=3;
+  const posts=[]; while(posts.length<shape) posts.push(nextFreePost({posts}));
+  return { shape, posts, a:3.5, b:3.5, c:3.5, bw:3.5, bl:3.5, color:'#d4a017', opacity:0.7, rot:0, dx:0, dz:0, on:true, tension:0.05 };
+}
+function addSail(){
+  S.sails.push(newSailDefaults());
+  buildSailEditors(); updateAll(); touch();
+}
+function removeSail(i){
+  if(i<0||i>=S.sails.length) return;
+  S.sails.splice(i,1);
+  buildSailEditors(); updateAll(); touch();
+}
+function rotateSail(s,dir){ if(dir>0) s.posts.unshift(s.posts.pop()); else s.posts.push(s.posts.shift()); }
+function buildSailEditors(){
+  const host=$('sails'); host.innerHTML='';
+  S.sails.forEach((s,si)=>{
+    const card=document.createElement('div'); card.className='card'; card.dataset.sailIdx=si;
+    const sizeHtml = s.shape===3
+      ? numRowHTML(t('lbl-side-a'),'sa',s.a,'m')+numRowHTML(t('lbl-side-b'),'sb',s.b,'m')+numRowHTML(t('lbl-side-c'),'sc',s.c,'m')
+      : numRowHTML(t('lbl-bw'),'bw',s.bw,'m')+numRowHTML(t('lbl-bl'),'bl',s.bl,'m');
+    const tensionHtml = numRowHTML(t('lbl-tension'),'st',(s.tension!==undefined?s.tension:0.05)*100,'cm');
+    let cornersHtml=''; for(let k=0;k<s.shape;k++) cornersHtml+=`<div class="row"><label>${t('lbl-corner-n')} ${k+1}</label><select class="ps" data-k="${k}">${postOptions(s.posts[k])}</select><span class="val rl" data-si="${si}" data-k="${k}">– m</span></div>`;
+    card.innerHTML=`<h3><span>${t('sail-label')} ${si+1}</span><label style="font-weight:400;font-size:11px;color:var(--muted)"><input type="checkbox" class="on" ${s.on?'checked':''}> ${t('lbl-active')}</label><button class="minib remove-sail" data-idx="${si}">${t('btn-remove-sail')}</button></h3>
+      <div class="seg"><button data-n="3" class="${s.shape===3?'active':''}">${t('lbl-3corners')}</button><button data-n="4" class="${s.shape===4?'active':''}">${t('lbl-4corners')}</button></div>
+      ${sizeHtml}${tensionHtml}${cornersHtml}
+      <div class="row"><label>${t('lbl-rotate')}</label><button class="minib rotL" title="${t('rot-ccw')}">⟲</button><button class="minib rotR" title="${t('rot-cw')}">⟳</button><button class="minib ctr" title="${t('center-tip')}">${t('lbl-center')}</button></div>
+      ${rowHTML(t('lbl-sail-rot'),'srot',-180,180,1,s.rot||0,'°',0)}
+      <div class="row"><label>${t('lbl-color')}</label><input class="scol" type="color" value="${s.color}"></div>
+      ${rowHTML(t('lbl-opacity'),'so',0.3,1,0.05,s.opacity,'',1)}
+      <p class="hint" style="margin:6px 0 0">${t('hint-sail-note')}</p>`;
+    const q=sel=>card.querySelector(sel);
+    const rm=q('.remove-sail'); if(rm) rm.onclick=()=>removeSail(si);
+    q('.on').onchange=e=>{ s.on=e.target.checked; updateAll(); touch(); };
+    card.querySelectorAll('.seg button').forEach(b=>b.onclick=()=>{ const n=+b.dataset.n; if(n===s.shape) return;
+      s.shape=n; s.posts=s.posts.slice(0,n); while(s.posts.length<n) s.posts.push(nextFreePost(s)); buildSailEditors(); updateAll(); touch(); });
+    if(s.shape===3){ bindNum(card,'sa',0.5,20,v=>s.a=v); bindNum(card,'sb',0.5,20,v=>s.b=v); bindNum(card,'sc',0.5,20,v=>s.c=v); }
+    else { bindNum(card,'bw',0.5,20,v=>s.bw=v); bindNum(card,'bl',0.5,20,v=>s.bl=v); }
+    bindNum(card,'st',0,50,v=>{s.tension=v/100;updateAll();});
+    card.querySelectorAll('.ps').forEach(sel=>sel.onchange=e=>{ s.posts[+sel.dataset.k]=+e.target.value; updateAll(); touch(); });
+    q('.rotL').onclick=()=>{ rotateSail(s,-1); buildSailEditors(); updateAll(); touch(); };
+    q('.rotR').onclick=()=>{ rotateSail(s, 1); buildSailEditors(); updateAll(); touch(); };
+    q('.ctr').onclick=()=>{ s.dx=0; s.dz=0; s.rot=0; const sr=card.querySelector('.srot'),srn=card.querySelector('.srotn'); if(sr){sr.value=0;srn.value='0';} updateAll(); touch(); };
+    link(card,'srot',-180,180,v=>{s.rot=v;updateAll();});
+    q('.scol').oninput=e=>{ s.color=e.target.value; buildSails(); touch(); };
+    link(card,'so',0.3,1,v=>{s.opacity=v;buildSails();});
+    host.appendChild(card);
+  });
+  const addWrap=document.createElement('div'); addWrap.style.marginTop='8px';
+  addWrap.innerHTML=`<button class="btn secondary" id="btnAddSail" style="width:100%">${t('btn-add-sail')}</button>`;
+  addWrap.querySelector('#btnAddSail').onclick=addSail;
+  host.appendChild(addWrap);
+}
+
+function buildFurnitureEditors(){
+  const host=$('furniture'); host.innerHTML='';
+  const RX=Math.max(15,+S.garden.w), RY=Math.max(15,+S.garden.d);
+  Object.keys(S.furniture).forEach(key=>{
+    const f=S.furniture[key]; if(!f) return;
+    const type=furnType(key);
+    const D=DEF.furniture[key]||DEF.furniture[type]||furnDefaults(type);
+    const card=document.createElement('div'); card.className='card'; card.dataset.fkey=key;
+    let sizeHtml='';
+    if(type==='table') sizeHtml=rowHTML(t('lbl-bw'),'tw',0.5,3,0.05,f.tw,'m',D.tw)+rowHTML(t('lbl-bl'),'tl',0.5,3,0.05,f.tl,'m',D.tl)+rowHTML(t('lbl-height'),'th',0.4,1.1,0.01,f.th,'m',D.th);
+    if(type==='pergola') sizeHtml=rowHTML(t('lbl-bw'),'pw',1,15,0.1,f.pw,'m',D.pw)+rowHTML(t('lbl-bl'),'pl',1,15,0.1,f.pl,'m',D.pl)+rowHTML(t('lbl-height'),'ph',1.8,3,0.05,f.ph,'m',D.ph);
+    let extraHtml='';
+    if(type==='pergola'){ const sd=f.sides||{}; extraHtml=`<div style="margin-top:6px;font-size:11px;color:var(--muted)">${t('perg-sides')}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:12px;margin-top:2px">
+        <label><input type="checkbox" class="sd-front" ${sd.front?'checked':''}> ${t('perg-front')}</label>
+        <label><input type="checkbox" class="sd-back" ${sd.back?'checked':''}> ${t('perg-back')}</label>
+        <label><input type="checkbox" class="sd-left" ${sd.left?'checked':''}> ${t('perg-left')}</label>
+        <label><input type="checkbox" class="sd-right" ${sd.right?'checked':''}> ${t('perg-right')}</label>
+      </div>`; }
+    const label=furnLabel(type);
+    const fnum=key.replace(/^[^0-9]+/,'');
+    card.innerHTML=`<h3><span>${label}${fnum?' '+fnum:''}</span><label style="font-weight:400;font-size:11px;color:var(--muted)"><input type="checkbox" class="on" ${f.on?'checked':''}> ${t('lbl-visible')}</label><button class="minib remove-furn" data-key="${key}">${t('btn-remove-furniture')}</button></h3>
+      ${rowHTML(t('lbl-x'),'fx',-RX,RX,0.1,f.x,'m',D.x)}${rowHTML(t('lbl-y'),'fy',-RY,RY,0.1,f.y,'m',D.y)}${rowHTML(t('lbl-yaw'),'fyaw',-180,180,1,f.yaw,'°',D.yaw)}${sizeHtml}${extraHtml}`;
+    const q=s=>card.querySelector(s);
+    const rm=q('.remove-furn'); if(rm) rm.onclick=()=>removeFurniture(key);
+    q('.on').onchange=e=>{f.on=e.target.checked; buildFurniture(); updateSun(); touch();};
+    link(card,'fx',-RX,RX,v=>{f.x=v;buildFurniture();updateSun();}); link(card,'fy',-RY,RY,v=>{f.y=v;buildFurniture();updateSun();}); link(card,'fyaw',-180,180,v=>{f.yaw=v;buildFurniture();});
+    if(type==='table'){ link(card,'tw',0.5,3,v=>{f.tw=v;buildFurniture();updateSun();}); link(card,'tl',0.5,3,v=>{f.tl=v;buildFurniture();updateSun();}); link(card,'th',0.4,1.1,v=>{f.th=v;buildFurniture();updateSun();}); }
+    if(type==='pergola'){ link(card,'pw',1,15,v=>{f.pw=v;buildFurniture();updateSun();}); link(card,'pl',1,15,v=>{f.pl=v;buildFurniture();updateSun();}); link(card,'ph',1.8,3,v=>{f.ph=v;buildFurniture();updateSun();});
+      f.sides=f.sides||{front:false,back:false,left:false,right:false};
+      [['sd-front','front'],['sd-back','back'],['sd-left','left'],['sd-right','right']].forEach(([cls,k])=>{ const cb=q('.'+cls); if(cb) cb.onchange=e=>{f.sides[k]=e.target.checked;buildFurniture();updateSun();touch();}; }); }
+    host.appendChild(card);
+  });
+  const addWrap=document.createElement('div'); addWrap.style.marginTop='8px';
+  addWrap.innerHTML=`<div style="display:flex;gap:6px">`+
+    `<button class="btn secondary" data-type="table" style="flex:1">+ ${t('furn-table')}</button>`+
+    `<button class="btn secondary" data-type="chair" style="flex:1">+ ${t('furn-chair')}</button>`+
+    `<button class="btn secondary" data-type="pergola" style="flex:1">+ ${t('furn-pergola')}</button>`+
+    `</div>`;
+  addWrap.querySelectorAll('button[data-type]').forEach(b=>b.onclick=()=>addFurniture(b.dataset.type));
+  host.appendChild(addWrap);
+}
+function furnType(key){ if(key.startsWith('table')) return 'table'; if(key.startsWith('pergola')) return 'pergola'; return 'chair'; }
+function furnDefaults(type){
+  if(type==='table') return {on:true,x:0,y:0,yaw:0,tw:0.9,tl:1.58,th:0.74};
+  if(type==='pergola') return {on:true,x:0,y:0,yaw:0,pw:2.9,pl:2.9,ph:2.4,sides:{front:false,back:false,left:false,right:false}};
+  return {on:true,x:0,y:0,yaw:0};
+}
+function furnLabel(type){ return type==='table'?t('furn-table'):type==='pergola'?t('furn-pergola'):t('furn-chair'); }
+function nextFurnKey(type){ let i=1; while(S.furniture[type+i]) i++; return type+i; }
+function addFurniture(type){
+  const key=nextFurnKey(type);
+  S.furniture[key]=furnDefaults(type);
+  buildFurnitureEditors(); updateAll(); touch();
+}
+function removeFurniture(key){
+  delete S.furniture[key];
+  buildFurnitureEditors(); updateAll(); touch();
+}
+
+function syncFurnitureInputs(key){ const card=document.querySelector(`#furniture .card[data-fkey="${key}"]`); if(!card) return; const f=S.furniture[key];
+  const fx=card.querySelector('.fx'),fxn=card.querySelector('.fxn'),fy=card.querySelector('.fy'),fyn=card.querySelector('.fyn');
+  if(fx){ fx.value=f.x.toFixed(1); fxn.value=fmt(f.x); } if(fy){ fy.value=f.y.toFixed(1); fyn.value=fmt(f.y); } }
+
+function buildPersonEditor(){
+  const host=$('person'); host.innerHTML='';
+  const p=S.person; const D=DEF.person||{on:true,x:-2,y:-2,h:1.9};
+  const card=document.createElement('div'); card.className='card';
+  card.innerHTML=`<h3>${t('person-label')}<label style="font-weight:400;font-size:11px;color:var(--muted)"><input type="checkbox" class="on" ${p.on?'checked':''}> ${t('lbl-visible')}</label></h3>
+    ${rowHTML(t('lbl-x'),'px',-15,15,0.1,p.x,'m',D.x)}${rowHTML(t('lbl-y'),'py',-15,15,0.1,p.y,'m',D.y)}${rowHTML(t('lbl-person-h'),'ph',0.5,2.5,0.01,p.h,'m',D.h)}`;
+  card.querySelector('.on').onchange=e=>{ p.on=e.target.checked; buildPerson(); touch(); };
+  link(card,'px',-15,15,v=>{p.x=v;buildPerson();}); link(card,'py',-15,15,v=>{p.y=v;buildPerson();}); link(card,'ph',0.5,2.5,v=>{p.h=v;buildPerson();});
+  host.appendChild(card);
+}
+function syncPersonInputs(){ const card=document.querySelector('#person .card'); if(!card) return; const p=S.person;
+  const px=card.querySelector('.px'),pxn=card.querySelector('.pxn'),py=card.querySelector('.py'),pyn=card.querySelector('.pyn');
+  if(px){ px.value=p.x.toFixed(1); pxn.value=fmt(p.x); } if(py){ py.value=p.y.toFixed(1); pyn.value=fmt(p.y); } }
+
+$('btnExport').onclick=()=>{ S.shadeAnalysis=computeDayShade();
+  const n=new Date(),p=x=>String(x).padStart(2,'0');
+  const def=`shade-sail-setup_${n.getFullYear()}-${p(n.getMonth()+1)}-${p(n.getDate())}_${p(n.getHours())}${p(n.getMinutes())}`;
+  let name=prompt(t('export-name-prompt'),def);
+  if(name===null) return; /* Abbruch */
+  name=name.trim()||def; name=name.replace(/[\\/:*?"<>|]+/g,'_'); if(!/\.json$/i.test(name)) name+='.json';
+  const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=name; a.click(); URL.revokeObjectURL(a.href); };
+$('btnImport').onclick=()=>$('fileImport').click();
+$('fileImport').onchange=e=>{ const file=e.target.files[0]; if(!file) return; const r=new FileReader();
+  r.onload=()=>{ try{ const obj=JSON.parse(r.result); S=migrate(obj)||defaultState(); refreshUI(); saveState(); snapshot(); $('saveState').textContent=t('import-ok'); }catch(err){ $('saveState').textContent=t('import-err')+err.message; } };
+  r.readAsText(file); e.target.value=''; };
+$('btnReset').onclick=()=>{ if(confirm(t('reset-confirm'))){ S=defaultState(); refreshUI(); saveState(); snapshot(); } };
+
+function refreshUI(){ applyTranslations(); wireStaticUI(); syncEvalRectInputs(); buildPointEditors(); buildSailEditors(); buildFurnitureEditors(); buildPersonEditor(); buildGarden(); updateAll(); }
+
+function onResize(){ const w=stage.clientWidth,h=stage.clientHeight; renderer.setSize(w,h); renderer.setPixelRatio(Math.min(devicePixelRatio,2)); camera.aspect=w/h; camera.updateProjectionMatrix(); }
+window.addEventListener('resize',onResize);
+function animate(){ requestAnimationFrame(animate); controls.update(); updateLabelScales(); renderer.render(scene,camera); }
+
+/* ---- Maus-Drag & Click-to-Scroll ---- */
+let drag=null; let pointerDownPos=null;
+function ndc(e){ const r=renderer.domElement.getBoundingClientRect(); return new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1); }
+function groundPoint(e,y=0){ raycaster.setFromCamera(ndc(e),camera); const plane=new THREE.Plane(new THREE.Vector3(0,1,0),-y); const pt=new THREE.Vector3(); return raycaster.ray.intersectPlane(plane,pt)?pt:null; }
+function scrollToCard(selector){ const el=document.querySelector(selector); if(!el) return; const group=el.closest('.group'); if(group) group.classList.remove('collapsed'); el.scrollIntoView({behavior:'smooth',block:'center'}); el.classList.remove('highlight'); void el.offsetWidth; el.classList.add('highlight'); }
+function handleClick(e){ raycaster.setFromCamera(ndc(e),camera);
+  /* poles */
+  const poles=raycaster.intersectObjects(polesGroup.children,false);
+  if(poles.length){ const idx=poles[0].object.userData.postIdx; if(typeof idx==='number'&&idx>=0) scrollToCard(`#points .card[data-post-idx="${idx}"]`); return; }
+  /* furniture (vor Segel, damit Möbel unter dem Segel erreichbar bleiben) */
+  const fh=raycaster.intersectObjects(furnGroup.children,true);
+  if(fh.length){ let o=fh[0].object; while(o && o.userData.furnKey===undefined) o=o.parent; if(o){ scrollToCard(`#furniture .card[data-fkey="${o.userData.furnKey}"]`); return; } }
+  /* person */
+  const ph=raycaster.intersectObjects(personGroup.children,false);
+  if(ph.length){ scrollToCard('#person .card'); return; }
+  /* sails */
+  const sm=sailMeshes.filter(m=>m.visible); const sh=raycaster.intersectObjects(sm,false);
+  if(sh.length){ const si=sailMeshes.indexOf(sh[0].object); scrollToCard(`#sails .card[data-sail-idx="${si}"]`); return; }
+  /* walls */
+  if(wallsGroup){ const wh=raycaster.intersectObjects(wallsGroup.children,false);
+    if(wh.length){ const wk=wh[0].object.userData.wallKey; scrollToCard(wk?`#row-wall-${wk}`:'#group-garden'); return; } }
+}
+function onPointerDown(e){ if(e.button!==0) return; pointerDownPos={x:e.clientX,y:e.clientY}; raycaster.setFromCamera(ndc(e),camera);
+  /* Pfosten zuerst prüfen – mit der Maus verschiebbar (bei „frei platzieren" aus: Snap an Wand) */
+  const poles=raycaster.intersectObjects(polesGroup.children,false);
+  if(poles.length){ const idx=poles[0].object.userData.postIdx;
+    if(typeof idx==='number'&&idx>=0){ const pt=groundPoint(e,0); if(pt){ drag={ type:'post', idx, last:pt }; controls.enabled=false; return; } } }
+  /* Möbel & Person zuerst prüfen, damit sie auch UNTER einem Segel greifbar bleiben */
+  const fh=raycaster.intersectObjects(furnGroup.children,true);
+  if(fh.length){ let o=fh[0].object; while(o && o.userData.furnKey===undefined) o=o.parent;
+    if(o && o.userData.furnKey!=='table' && o.userData.furnKey!=='pergola'){
+      const pt=groundPoint(e,0); if(pt){ drag={ type:'furn', key:o.userData.furnKey, last:pt }; controls.enabled=false; return; }
+    } }
+  /* person drag */
+  const ph=raycaster.intersectObjects(personGroup.children,false);
+  if(ph.length){ const pt=groundPoint(e,0); if(pt){ drag={ type:'person', last:pt }; controls.enabled=false; return; } }
+  /* Segel zuletzt – greift überall dort, wo kein Möbel/Person darunter liegt */
+  const sm=sailMeshes.filter(m=>m.visible); const sh=raycaster.intersectObjects(sm,false);
+  if(sh.length){ drag={ type:'sail', si:sailMeshes.indexOf(sh[0].object), y:sh[0].point.y, last:sh[0].point.clone() }; controls.enabled=false; return; }
+}
+function onPointerMove(e){ if(!drag) return;
+  if(drag.type==='sail'){ const pt=groundPoint(e,drag.y); if(pt){ const s=S.sails[drag.si];
+      s.dx=(s.dx||0)+(pt.x-drag.last.x); s.dz=(s.dz||0)+(pt.z-drag.last.z); drag.last.copy(pt);
+      const surf=sailSurface(s); s.dx=surf.center.x-surf.G.x; s.dz=surf.center.z-surf.G.z;
+      buildSails(); buildRopes(); updateRopeReadouts(); buildLabels(); updateShadow(sunDir.y>0.02); touch(); } }
+  else if(drag.type==='person'){ const pt=groundPoint(e,0); if(pt){ const p=S.person; p.x+=(pt.x-drag.last.x); p.y+=(pt.z-drag.last.z); drag.last.copy(pt);
+      buildPerson(); buildLabels(); syncPersonInputs(); touch(); } }
+  else if(drag.type==='post'){ const pt=groundPoint(e,0); if(pt){ const p=S.points[drag.idx]; const B=refWorld();
+      let wx=pt.x, wz=pt.z; const hw=S.garden.w/2, hd=S.garden.d/2;
+      wx=Math.max(-hw,Math.min(hw,wx)); wz=Math.max(-hd,Math.min(hd,wz));
+      if(!S.optimizer_freePosts){ /* an die nächste Gartenkante kleben */
+        const dL=wx+hw, dR=hw-wx, dT=wz+hd, dB=hd-wz, m=Math.min(dL,dR,dT,dB);
+        if(m===dL) wx=-hw; else if(m===dR) wx=hw; else if(m===dT) wz=-hd; else wz=hd; }
+      p.x=wx-B.x; p.y=wz-B.z; drag.last.copy(pt);
+      buildPoles(); buildSails(); buildRopes(); updateRopeReadouts(); buildLabels(); updateShadow(sunDir.y>0.02); syncPointInputs(drag.idx); touch(); } }
+  else { const pt=groundPoint(e,0); if(pt){ const f=S.furniture[drag.key]; f.x+=(pt.x-drag.last.x); f.y+=(pt.z-drag.last.z); drag.last.copy(pt);
+      buildFurniture(); buildLabels(); updateShadow(sunDir.y>0.02); syncFurnitureInputs(drag.key); touch(); } }
+}
+function onPointerUp(e){ const wasDrag=!!drag; drag=null; controls.enabled=true;
+  const moved = (pointerDownPos && e) ? Math.abs(e.clientX-pointerDownPos.x)+Math.abs(e.clientY-pointerDownPos.y) : 99;
+  if(moved<6) handleClick(e);      /* fast unbewegt → als Klick behandeln (Karte auswählen), auch nach Greifen eines Objekts */
+  else if(wasDrag) renderDayShade();
+  pointerDownPos=null;
+}
+renderer.domElement.addEventListener('pointerdown',onPointerDown,true);
+window.addEventListener('pointermove',onPointerMove); window.addEventListener('pointerup',onPointerUp);
+/* Doppelklick auf ein Segel → zugehörige Karte im Panel hervorheben */
+renderer.domElement.addEventListener('dblclick',e=>{ raycaster.setFromCamera(ndc(e),camera);
+  const sm=sailMeshes.filter(m=>m.visible); const sh=raycaster.intersectObjects(sm,false);
+  if(sh.length){ const si=sailMeshes.indexOf(sh[0].object); scrollToCard(`#sails .card[data-sail-idx="${si}"]`); } });
+
+$('panel').addEventListener('dblclick',e=>{ const el=e.target; if(el.tagName==='INPUT'&&el.type==='range'&&el.dataset.default!==undefined){ el.value=el.dataset.default; el.dispatchEvent(new Event('input',{bubbles:true})); } });
+
+applyTranslations();
+refreshUI(); snapshot(); updateHistButtons(); onResize(); animate();
+document.querySelectorAll('.group > h2').forEach(h=>h.addEventListener('click',()=>h.parentElement.classList.toggle('collapsed')));
+</script>
+<div id="toast"></div>
+<button id="btnOptimizeFloat" data-i18n="btn-optimize-shading"
+  style="position:fixed;top:12px;right:16px;z-index:200;padding:7px 14px;
+         background:#2c6fbb;color:#fff;border:none;border-radius:6px;
+         cursor:pointer;font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,.4)">
+  Optimize Shading
+</button>
+<button id="btnFitSailsFloat" data-i18n="btn-fit-sails"
+  style="position:fixed;top:48px;right:16px;z-index:200;padding:7px 14px;
+         background:#c9a227;color:#0f2417;border:none;border-radius:6px;
+         cursor:pointer;font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,.4)">
+  Fit Sail to Posts
+</button>
+</body>
+</html>

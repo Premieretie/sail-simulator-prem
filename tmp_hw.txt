@@ -1,0 +1,20 @@
+275 { size:'6mm',  length:0.100 },
+276 { size:'8mm',  length:0.120 },
+277 { size:'10mm', length:0.150 },
+278 { size:'12mm', length:0.200 },
+279 { size:'16mm', length:0.250 },
+280 { size:'20mm', length:0.300 },
+281 { size:'22mm', length:0.306 },
+282 { size:'24mm', length:0.350 },
+283 { size:'28mm', length:0.360 },
+284 { size:'32mm', length:0.400 }
+287 const HARDWARE={
+288 shackles:[
+289 { type:'None', length:0 },
+290 { type:'6mm Bow Shackle', length:0.025 },
+291 { type:'8mm Bow Shackle', length:0.035 },
+292 { type:'10mm Bow Shackle', length:0.045 },
+293 { type:'12mm Bow Shackle', length:0.055 }
+295 turnbuckles:TURNBUCKLE_TYPES.flatMap(t=>TURNBUCKLE_SIZES.map(s=>({ type:`${t} ${s.size}`, length:s.length })))
+990 return (p.shackle?p.shackle.length:0)+(p.turnbuckle?p.turnbuckle.length:0);
+2186 const off=(p.shackle?p.shackle.length:0)+(p.turnbuckle?p.turnbuckle.length:0);
