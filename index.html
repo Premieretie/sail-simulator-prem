@@ -27,6 +27,28 @@
   html,body{margin:0;height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text)}
   body{display:flex;flex-direction:column}
   #app{display:flex;flex:1;min-height:0;overflow:hidden}
+  #menuBar{display:flex;align-items:stretch;background:#081209;border-bottom:1px solid var(--line);height:30px;flex:0 0 30px;font-size:12px;position:relative;z-index:50}
+  .menu-item{position:relative}
+  .menu-btn{height:100%;background:transparent;border:none;color:var(--muted);padding:0 14px;font-size:12px;cursor:pointer}
+  .menu-btn:hover{color:var(--text);background:rgba(255,255,255,.06)}
+  .menu-item.open .menu-btn{color:var(--sun);background:rgba(255,255,255,.06)}
+  .menu-dropdown{display:none;position:absolute;top:100%;left:0;min-width:220px;background:var(--panel-2);border:1px solid var(--line);border-radius:0 0 8px 8px;box-shadow:0 8px 20px rgba(0,0,0,.5);flex-direction:column;padding:6px;z-index:60}
+  .menu-item.open .menu-dropdown{display:flex}
+  .menu-dropdown button{background:transparent;border:none;color:var(--text);text-align:left;padding:7px 10px;font-size:12px;border-radius:5px;cursor:pointer;white-space:nowrap}
+  .menu-dropdown button:hover{background:var(--sun);color:#1a1206}
+  .menu-dropdown .menu-sep{height:1px;background:var(--line);margin:4px 2px}
+  .menu-dropdown .menu-note{padding:6px 10px;color:var(--muted);font-size:11px}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:1000}
+  .modal-overlay.hidden{display:none}
+  .modal-card{background:var(--panel);border:1px solid var(--line);border-radius:10px;width:min(640px,92vw);max-height:86vh;overflow-y:auto;box-shadow:0 12px 40px rgba(0,0,0,.6)}
+  .modal-card h2{margin:0;padding:14px 18px;border-bottom:1px solid var(--line);font-size:15px;position:sticky;top:0;background:var(--panel);display:flex;justify-content:space-between;align-items:center}
+  .modal-x{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:6px;padding:2px 8px;cursor:pointer;font-size:12px}
+  .modal-x:hover{color:var(--text);border-color:var(--text)}
+  .modal-body{padding:14px 18px}
+  .modal-body .row label{flex:0 0 130px}
+  .modal-body h3{margin:14px 0 6px;font-size:12px;color:var(--sun);text-transform:uppercase;letter-spacing:.5px}
+  .modal-body h3:first-child{margin-top:0}
+  .modal-actions{display:flex;justify-content:flex-end;gap:8px;padding:12px 18px;border-top:1px solid var(--line)}
   #projectTabs{display:flex;align-items:stretch;background:#0c1c12;border-bottom:1px solid var(--line);height:36px;flex:0 0 36px;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin}
   #projectTabs .ptab{display:flex;align-items:center;gap:8px;padding:0 10px 0 14px;background:var(--panel);border-right:1px solid var(--line);color:var(--muted);font-size:12px;cursor:pointer;white-space:nowrap;position:relative;user-select:none;flex:0 0 auto}
   #projectTabs .ptab.active{background:var(--panel-2);color:var(--text);box-shadow:inset 0 -2px 0 var(--sun)}
@@ -114,7 +136,49 @@
 </style>
 </head>
 <body>
+<div id="menuBar">
+  <div class="menu-item" id="menuFile">
+    <button class="menu-btn">File</button>
+    <div class="menu-dropdown">
+      <button id="miNewProject">New Project</button>
+      <div class="menu-sep"></div>
+      <button id="miJobDetails">Job / Customer Details…</button>
+      <div class="menu-sep"></div>
+      <button id="miExportPdf">Export Supplier PDF…</button>
+      <button id="miExportJson">Export JSON</button>
+      <button id="miImportJson">Import JSON</button>
+      <div class="menu-sep"></div>
+      <button id="miReset">Reset Project</button>
+    </div>
+  </div>
+  <div class="menu-item" id="menuEdit">
+    <button class="menu-btn">Edit</button>
+    <div class="menu-dropdown">
+      <button id="miUndo">Undo</button>
+      <button id="miRedo">Redo</button>
+    </div>
+  </div>
+  <div class="menu-item" id="menuAccount">
+    <button class="menu-btn">Account</button>
+    <div class="menu-dropdown">
+      <div class="menu-note" id="miAccountName">Not signed in</div>
+      <button id="miSetName">Set display name…</button>
+      <div class="menu-sep"></div>
+      <button id="miAbout">About</button>
+    </div>
+  </div>
+  <p class="hint" id="saveState" data-i18n="hint-save" style="margin:0 0 0 12px;align-self:center"></p>
+  <input id="fileImport" type="file" accept="application/json" hidden>
+</div>
 <div id="projectTabs"></div>
+
+<div id="detailsModal" class="modal-overlay hidden">
+  <div class="modal-card">
+    <h2>Job / Customer Details<button id="detailsClose" class="modal-x">&#10005;</button></h2>
+    <div class="modal-body" id="detailsBody"></div>
+  </div>
+</div>
+
 <div id="app">
   <aside id="panel">
     <header>
@@ -131,17 +195,6 @@
     </header>
 
     <div id="panelDesign" class="panel-tab">
-    <div class="group collapsed">
-      <h2 data-i18n="sec-data"></h2>
-      <div class="row" style="gap:6px">
-        <button class="btn secondary" id="btnExport" style="flex:1" data-i18n="btn-export"></button>
-        <button class="btn secondary" id="btnImport" style="flex:1" data-i18n="btn-import"></button>
-        <button class="btn secondary" id="btnReset" style="flex:0 0 64px" data-i18n="btn-reset"></button>
-      </div>
-      <p class="hint" id="saveState" data-i18n="hint-save"></p>
-      <input id="fileImport" type="file" accept="application/json" hidden>
-    </div>
-
     <div class="group collapsed" id="group-garden">
       <h2 data-i18n="sec-garden"></h2>
       <div class="row"><label data-i18n="lbl-width"></label><input id="gw" type="range" min="3" max="100" step="0.5"><input id="gwn" class="num" type="text" inputmode="decimal"><span class="unit">m</span></div>
@@ -303,6 +356,7 @@
 </div>
 
 <script src="https://unpkg.com/suncalc@1.9.0/suncalc.js"></script>
+<script src="https://unpkg.com/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script type="importmap">
 { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" }}
 </script>
@@ -842,6 +896,16 @@ function defaultState(){
     showDims:false,
     uiPanelOpen:true,
     uiPanelTab:'design',
+    details:{
+      customerName:'', jobNumber:'', measurer:'',
+      street:'', suburb:'', state:'', postcode:'',
+      phone:'', fax:'', email:'',
+      deliveryOption:'Pickup', foldDirection:'Underside',
+      cableStyle:'Continuous', cableSize:'4mm', cornerFittings:'',
+      tBuckleSize:'8mm Hook-Hook', dShackleSize:'8mm', toggleSize:'',
+      takeOffLacing:150, takeOffToggle:0, takeOffTBuckle:400, takeOffDS:80,
+      offsetPct:5, notes:''
+    },
     measure:{
       n:6, sides:[4370,4340,7160,3490,2600,7480], diagonals:{'A-C':7750,'A-D':10420,'A-E':8280,'B-D':8300,'B-E':7390,'B-F':8020,'C-E':8080,'C-F':9570,'D-F':5990},
       datum:'A', material:'', colour:'#c0392b', notes:'', show:true,
@@ -905,6 +969,9 @@ function migrate(st){
   if(typeof st.showDims!=='boolean') st.showDims=(typeof st.showLabels==='boolean')?st.showLabels:false;
   if(typeof st.uiPanelOpen!=='boolean') st.uiPanelOpen=true;
   if(typeof st.uiPanelTab!=='string') st.uiPanelTab='design';
+  if(!st.details || typeof st.details!=='object') st.details={};
+  st.details=Object.assign({}, d.details, st.details);
+  Object.keys(d.details).forEach(k=>{ if(typeof d.details[k]==='number') st.details[k]=num(st.details[k],d.details[k]); else if(typeof st.details[k]!=='string') st.details[k]=String(st.details[k]!=null?st.details[k]:d.details[k]); });
   if(!st.measure || typeof st.measure!=='object'){
     st.measure={n:6, sides:[4370,4340,7160,3490,2600,7480], diagonals:{'A-C':7750,'A-D':10420,'A-E':8280,'B-D':8300,'B-E':7390,'B-F':8020,'C-E':8080,'C-F':9570,'D-F':5990}, show:true, colour:'#c0392b', material:'', notes:'', datum:'A', points:[]};
   }
@@ -3026,7 +3093,7 @@ function placeMeasureInDesign(){
   showToast('Poles and measured sail placed in Design');
 }
 
-$('btnExport').onclick=()=>{ S.shadeAnalysis=computeDayShade();
+$('miExportJson').onclick=()=>{ S.shadeAnalysis=computeDayShade();
   const n=new Date(),p=x=>String(x).padStart(2,'0');
   const def=`shade-sail-setup_${n.getFullYear()}-${p(n.getMonth()+1)}-${p(n.getDate())}_${p(n.getHours())}${p(n.getMinutes())}`;
   let name=prompt(t('export-name-prompt'),def);
@@ -3034,7 +3101,7 @@ $('btnExport').onclick=()=>{ S.shadeAnalysis=computeDayShade();
   name=name.trim()||def; name=name.replace(/[\\/:*?"<>|]+/g,'_'); if(!/\.json$/i.test(name)) name+='.json';
   const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
   a.download=name; a.click(); URL.revokeObjectURL(a.href); };
-$('btnImport').onclick=()=>$('fileImport').click();
+$('miImportJson').onclick=()=>$('fileImport').click();
 $('fileImport').onchange=e=>{ const file=e.target.files[0]; if(!file) return; const r=new FileReader();
   r.onload=()=>{ try{ const obj=JSON.parse(r.result); S=migrate(obj)||defaultState(); refreshUI(); saveState(); snapshot(); $('saveState').textContent=t('import-ok'); }catch(err){ $('saveState').textContent=t('import-err')+err.message; } };
   r.readAsText(file); e.target.value=''; };
@@ -3044,7 +3111,146 @@ function clearAll(){
   S=Object.assign({},d,{points:[],sails:[],furniture:{},person:{on:false,x:0,y:-3,h:1.9},evalRect:{on:false,x0:-2,y0:-2,x1:2,y1:2},measure:d.measure,ref:d.ref,garden:d.garden});
   refreshUI(); saveState(); snapshot();
 }
-$('btnReset').onclick=clearAll;
+$('miReset').onclick=clearAll;
+
+/* ---- Top menu bar (File / Edit / Account) ---- */
+function closeAllMenus(){ document.querySelectorAll('.menu-item.open').forEach(m=>m.classList.remove('open')); }
+document.querySelectorAll('.menu-item').forEach(mi=>{
+  const btn=mi.querySelector('.menu-btn'); if(!btn) return;
+  btn.onclick=e=>{ e.stopPropagation(); const isOpen=mi.classList.contains('open'); closeAllMenus(); if(!isOpen) mi.classList.add('open'); };
+});
+document.addEventListener('click',e=>{ if(!e.target.closest('.menu-item')) closeAllMenus(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeAllMenus(); });
+document.querySelectorAll('.menu-dropdown button').forEach(b=>{ b.addEventListener('click',()=>closeAllMenus()); });
+
+$('miNewProject').onclick=()=>addProjectTab();
+
+/* ---- Job / Customer Details modal ---- */
+function detailRow(label,id,value,type,opts,unit){
+  let input;
+  if(type==='select'){
+    const options=(opts||[]).map(o=>`<option value="${o}" ${o===value?'selected':''}>${o||'—'}</option>`).join('');
+    input=`<select id="${id}" style="flex:1">${options}</select>`;
+  } else if(type==='textarea'){
+    input=`<textarea id="${id}" rows="3" style="flex:1;background:var(--panel-2);border:1px solid var(--line);color:var(--text);border-radius:6px;padding:6px;font-family:inherit;font-size:12px">${value||''}</textarea>`;
+  } else {
+    input=`<input id="${id}" type="text" inputmode="${type==='number'?'decimal':'text'}" class="num" style="width:auto;flex:1" value="${value!=null?value:''}">`;
+  }
+  return `<div class="row" style="align-items:${type==='textarea'?'flex-start':'center'}"><label>${label}</label>${input}${unit?`<span class="unit">${unit}</span>`:''}</div>`;
+}
+function buildDetailsForm(){
+  const d=S.details; const host=$('detailsBody'); if(!host) return;
+  const TB=['6mm Hook-Hook','6mm Eye-Eye','8mm Hook-Hook','8mm Eye-Eye','10mm Hook-Hook','10mm Eye-Eye','12mm Hook-Hook','12mm Eye-Eye','16mm Hook-Hook','16mm Eye-Eye'];
+  const DS=['6mm','8mm','10mm','12mm'];
+  const TG=['','12mm@200mm','12mm@250mm','16mm Welded@200mm','16mm Welded@250mm','16mm Welded@300mm','16mm Welded@400mm','20mm Welded@200mm','20mm Welded@250mm','20mm Welded@300mm','20mm Welded@400mm'];
+  host.innerHTML=
+    '<h3>Customer</h3>'+
+    detailRow('Customer Name','dCustomerName',d.customerName)+
+    detailRow('Job Number','dJobNumber',d.jobNumber)+
+    detailRow('Measurer','dMeasurer',d.measurer)+
+    '<h3>Address</h3>'+
+    detailRow('Street','dStreet',d.street)+
+    detailRow('Suburb','dSuburb',d.suburb)+
+    detailRow('State','dState',d.state)+
+    detailRow('Postcode','dPostcode',d.postcode)+
+    '<h3>Contact</h3>'+
+    detailRow('Phone','dPhone',d.phone)+
+    detailRow('Fax','dFax',d.fax)+
+    detailRow('Email','dEmail',d.email)+
+    '<h3>Manufacturing</h3>'+
+    detailRow('Delivery Option','dDeliveryOption',d.deliveryOption,'select',['Pickup','Delivery'])+
+    detailRow('Fold Direction','dFoldDirection',d.foldDirection,'select',['Underside','Topside'])+
+    detailRow('Cable Style','dCableStyle',d.cableStyle,'select',['Continuous','Terminated','Inline'])+
+    detailRow('Cable Size','dCableSize',d.cableSize,'select',['3mm','4mm','5mm','6mm','8mm','10mm'])+
+    detailRow('Corner Fittings','dCornerFittings',d.cornerFittings)+
+    '<h3>Hardware / Take-offs</h3>'+
+    detailRow('Turn Buckle Size','dTBuckleSize',d.tBuckleSize,'select',TB)+
+    detailRow('D Shackle Size','dDShackleSize',d.dShackleSize,'select',DS)+
+    detailRow('Toggle Size','dToggleSize',d.toggleSize,'select',TG)+
+    detailRow('Take off – Lacing','dTakeOffLacing',d.takeOffLacing,'number',null,'mm')+
+    detailRow('Take off – Toggles','dTakeOffToggle',d.takeOffToggle,'number',null,'mm')+
+    detailRow('Take off – T-Buckle','dTakeOffTBuckle',d.takeOffTBuckle,'number',null,'mm')+
+    detailRow('Take off – D.S.','dTakeOffDS',d.takeOffDS,'number',null,'mm')+
+    detailRow('Offset','dOffsetPct',d.offsetPct,'number',null,'%')+
+    '<h3>Notes</h3>'+
+    detailRow('Notes','dNotes',d.notes,'textarea');
+  const bind=(id,key,isNum)=>{ const el=$(id); if(!el) return; el.onchange=e=>{ let v=e.target.value; if(isNum){ v=parseFloat(String(v).replace(',','.')); if(isNaN(v)) v=0; } S.details[key]=v; touch(); }; };
+  bind('dCustomerName','customerName'); bind('dJobNumber','jobNumber'); bind('dMeasurer','measurer');
+  bind('dStreet','street'); bind('dSuburb','suburb'); bind('dState','state'); bind('dPostcode','postcode');
+  bind('dPhone','phone'); bind('dFax','fax'); bind('dEmail','email');
+  bind('dDeliveryOption','deliveryOption'); bind('dFoldDirection','foldDirection'); bind('dCableStyle','cableStyle'); bind('dCableSize','cableSize'); bind('dCornerFittings','cornerFittings');
+  bind('dTBuckleSize','tBuckleSize'); bind('dDShackleSize','dShackleSize'); bind('dToggleSize','toggleSize');
+  bind('dTakeOffLacing','takeOffLacing',true); bind('dTakeOffToggle','takeOffToggle',true); bind('dTakeOffTBuckle','takeOffTBuckle',true); bind('dTakeOffDS','takeOffDS',true);
+  bind('dOffsetPct','offsetPct',true);
+  bind('dNotes','notes');
+}
+function openDetailsModal(){ buildDetailsForm(); $('detailsModal').classList.remove('hidden'); }
+function closeDetailsModal(){ $('detailsModal').classList.add('hidden'); }
+$('detailsClose').onclick=closeDetailsModal;
+$('detailsModal').addEventListener('click',e=>{ if(e.target.id==='detailsModal') closeDetailsModal(); });
+$('miJobDetails').onclick=openDetailsModal;
+
+/* ---- Supplier PDF export ---- */
+function exportSupplierPDF(){
+  if(!window.jspdf){ showToast('PDF library still loading, please try again in a moment.'); return; }
+  const { jsPDF }=window.jspdf;
+  const doc=new jsPDF({unit:'mm',format:'a4'});
+  const d=S.details, ms=S.measure;
+  let y=15;
+  const line=(txt,size,bold)=>{ doc.setFontSize(size||10.5); doc.setFont(undefined,bold?'bold':'normal');
+    const wrapped=doc.splitTextToSize(String(txt),180);
+    wrapped.forEach(w=>{ if(y>282){ doc.addPage(); y=15; } doc.text(w,15,y); y+=(size||10.5)*0.5+2; }); };
+  const rule=()=>{ if(y>282){ doc.addPage(); y=15; } doc.setDrawColor(200); doc.line(15,y,195,y); y+=4; };
+  line('Shade Sail Order — Supplier Sheet',16,true);
+  line('Generated '+new Date().toLocaleString(),9);
+  y+=1; rule();
+  line('Customer Details',12,true);
+  line('Customer Name: '+(d.customerName||'-'));
+  line('Job Number: '+(d.jobNumber||'-'));
+  line('Measurer: '+(d.measurer||'-'));
+  line('Address: '+([d.street,d.suburb,d.state,d.postcode].filter(Boolean).join(', ')||'-'));
+  line('Phone: '+(d.phone||'-')+'   Fax: '+(d.fax||'-'));
+  line('Email: '+(d.email||'-'));
+  y+=1; rule();
+  line('Manufacturing',12,true);
+  line('Delivery Option: '+d.deliveryOption+'    Fold Direction: '+d.foldDirection);
+  line('Cable Style: '+d.cableStyle+'    Cable Size: '+d.cableSize);
+  line('Corner Fittings: '+(d.cornerFittings||'-'));
+  line('Turn Buckle Size: '+d.tBuckleSize+'    D Shackle Size: '+d.dShackleSize+'    Toggle Size: '+(d.toggleSize||'-'));
+  line('Take off – Lacing: '+d.takeOffLacing+'mm   Toggles: '+d.takeOffToggle+'mm   T-Buckle: '+d.takeOffTBuckle+'mm   D.S.: '+d.takeOffDS+'mm');
+  line('Offset: '+d.offsetPct+'%');
+  y+=1; rule();
+  line('Sail Measurements ('+ms.n+' points, datum '+(ms.datum||'A')+')',12,true);
+  line('Material: '+(ms.material||'-')+'    Colour: '+(ms.colour||'-'));
+  if(ms.notes) line('Notes: '+ms.notes);
+  y+=1;
+  measureSideKeys(ms.n).forEach((k,i)=>line(k+':  '+(ms.sides[i]||0)+' mm'));
+  measureDiagonalKeys(ms.n).forEach(k=>line(k+' (diagonal):  '+(ms.diagonals[k]||0)+' mm'));
+  y+=1; rule();
+  line('Fixing Points',12,true);
+  const datumIdx=Math.max(0,Math.min(ms.points.length-1,(ms.datum||'A').charCodeAt(0)-65));
+  const datumP=ms.points[datumIdx];
+  ms.points.forEach((p,i)=>{
+    const isDatum=i===datumIdx;
+    const fh=isDatum?'DATUM':((((p.height||0)-(datumP.height||0))*1000>=0?'+':'')+Math.round(((p.height||0)-(datumP.height||0))*1000)+' mm');
+    line('Point '+p.letter+':  Fixing height '+fh+'   Shackle '+((p.shackle&&p.shackle.type)||'-')+'   Turnbuckle '+((p.turnbuckle&&p.turnbuckle.type)||'-')+'   Tension/gap '+(p.tension!=null?p.tension:0)+' m');
+  });
+  const fname=((d.customerName||d.jobNumber)?(d.customerName+'_'+d.jobNumber):'shade-sail-order').replace(/[^a-z0-9_]+/gi,'_').replace(/^_+|_+$/g,'')||'shade-sail-order';
+  doc.save(fname+'_supplier-sheet.pdf');
+  showToast('Supplier PDF exported');
+}
+$('miExportPdf').onclick=exportSupplierPDF;
+
+/* ---- Edit menu ---- */
+$('miUndo').onclick=undo;
+$('miRedo').onclick=redo;
+
+/* ---- Account menu (local only – no backend/auth) ---- */
+function loadAccountName(){ try{ return localStorage.getItem('shade-account-name')||''; }catch(e){ return ''; } }
+function refreshAccountMenu(){ const name=loadAccountName(); const el=$('miAccountName'); if(el) el.textContent=name?('Signed in as '+name):'Not signed in'; }
+$('miSetName').onclick=()=>{ const cur=loadAccountName(); const name=prompt('Display name',cur); if(name!==null){ try{ localStorage.setItem('shade-account-name',name.trim()); }catch(e){} refreshAccountMenu(); } };
+$('miAbout').onclick=()=>{ alert('Shade Sail Simulator — 3D Garden Shadow Planner\nA free browser-based tool for planning shade sail placement, sun position and shadow casting.'); };
+refreshAccountMenu();
 
 function refreshUI(){ applyTranslations(); wireStaticUI(); syncEvalRectInputs(); buildPointEditors(); buildSailEditors(); buildFurnitureEditors(); buildPersonEditor(); buildGarden(); updateAll(); }
 
