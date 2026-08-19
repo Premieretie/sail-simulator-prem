@@ -25,7 +25,17 @@
   :root{ --bg:#0f2417; --panel:#1a3c2b; --panel-2:#24523d; --line:#4a7c59; --text:#f4f1e6; --muted:#a8c5b5; --sun:#ffb81c; --ref:#d4a017; }
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text)}
-  #app{display:flex;height:100vh;overflow:hidden}
+  body{display:flex;flex-direction:column}
+  #app{display:flex;flex:1;min-height:0;overflow:hidden}
+  #projectTabs{display:flex;align-items:stretch;background:#0c1c12;border-bottom:1px solid var(--line);height:36px;flex:0 0 36px;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin}
+  #projectTabs .ptab{display:flex;align-items:center;gap:8px;padding:0 10px 0 14px;background:var(--panel);border-right:1px solid var(--line);color:var(--muted);font-size:12px;cursor:pointer;white-space:nowrap;position:relative;user-select:none;flex:0 0 auto}
+  #projectTabs .ptab.active{background:var(--panel-2);color:var(--text);box-shadow:inset 0 -2px 0 var(--sun)}
+  #projectTabs .ptab .pname{max-width:140px;overflow:hidden;text-overflow:ellipsis}
+  #projectTabs .ptab .pclose{border:none;background:transparent;color:var(--muted);font-size:14px;line-height:1;padding:2px 4px;border-radius:4px;cursor:pointer}
+  #projectTabs .ptab .pclose:hover{color:#fff;background:rgba(255,255,255,.12)}
+  #projectTabs .ptab input.prename{background:var(--panel-2);border:1px solid var(--sun);color:var(--text);font-size:12px;border-radius:4px;padding:1px 4px;width:120px}
+  #projectTabs #ptabAdd{flex:0 0 auto;width:36px;background:transparent;border:none;border-right:1px solid var(--line);color:var(--muted);font-size:18px;cursor:pointer}
+  #projectTabs #ptabAdd:hover{color:var(--sun);background:rgba(255,255,255,.06)}
   #panel{width:344px;min-width:344px;height:100%;overflow-y:auto;background:var(--panel);border-right:1px solid var(--line);padding-bottom:50px;transition:width .25s ease,min-width .25s ease,opacity .25s ease,padding .25s ease,border-width .25s ease}
   #app.panel-collapsed #panel{width:0;min-width:0;padding-left:0;padding-right:0;border-right-width:0;opacity:0;overflow:hidden}
   #panel header{padding:16px 18px 12px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:3}
@@ -104,6 +114,7 @@
 </style>
 </head>
 <body>
+<div id="projectTabs"></div>
 <div id="app">
   <aside id="panel">
     <header>
@@ -273,11 +284,11 @@
       </div>
     </div>
 
-    <footer>
+    <!-- <footer>
       © 2026 PremiereTie
       <a href="https://github.com/nomiknomik/shade-sail-simulator/blob/main/LICENSE.md" target="_blank" rel="noopener" data-i18n="footer-license"></a><br>
       <a href="https://github.com/nomiknomik/shade-sail-simulator" target="_blank" rel="noopener">GitHub Repository</a>
-    </footer>
+    </footer> -->
   </aside>
   <main id="stage"><div id="hud"></div>
     <button id="panelOpen" title="Open panel">☰</button>
@@ -570,6 +581,22 @@ const TRANSLATIONS = {
     'furn-chair1': 'Chair 1',
     'furn-chair2': 'Chair 2',
     'furn-pergola': 'Pergola',
+    'furn-pool': 'Pool',
+    'furn-car': 'Car',
+    'furn-fence': 'Fence',
+    'furn-driveway': 'Driveway',
+    'lbl-depth': 'Depth',
+    'lbl-pool-shape': 'Shape',
+    'pool-shape-rect': 'Rectangle',
+    'pool-shape-oval': 'Oval',
+    'pool-shape-kidney': 'Kidney',
+    'pool-shape-custom': 'Custom',
+    'proj-default-name': 'Project',
+    'proj-rename-prompt': 'Project name',
+    'proj-close-confirm': 'Close this project? Unsaved changes are kept, but this cannot be undone from here.',
+    'proj-add-title': 'New project',
+    'proj-close-title': 'Close project',
+    'btn-add-vertex': '+ Add point',
     'btn-add-furniture': '+ Add furniture',
     'btn-remove-furniture': 'Remove',
     'perg-sides': 'Vertical sun protection (sides)',
@@ -891,13 +918,13 @@ function migrate(st){
     const ch=String.fromCharCode(65+ms.points.length);
     ms.points.push({letter:ch, offsetX:0, offsetY:0, height:2.5, shackle:HARDWARE.shackles[2], turnbuckle:findHardware('turnbuckles','Jaw & Jaw 10mm'), tension:0.05});
   }
-  ms.points=ms.points.slice(0,ms.n).map(p=>({
-    letter:typeof p.letter==='string'?p.letter:String.fromCharCode(65+(p.index||0)),
+  ms.points=ms.points.slice(0,ms.n).map((p,i)=>{ p=p||{}; return {
+    letter:typeof p.letter==='string'?p.letter:String.fromCharCode(65+i),
     offsetX:num(p.offsetX,0), offsetY:num(p.offsetY,0), height:num(p.height,2.5),
     shackle:(p&&p.shackle && typeof p.shackle.type==='string') ? findHardware('shackles',p.shackle.type) : HARDWARE.shackles[2],
     turnbuckle:(p&&p.turnbuckle && typeof p.turnbuckle.type==='string') ? findHardware('turnbuckles',p.turnbuckle.type) : findHardware('turnbuckles','Jaw & Jaw 10mm'),
     tension:num(p.tension,0.05)
-  }));
+  }; });
   delete ms.color;
   delete st.showLabels;
   if(!Array.isArray(st.points)||st.points.length===0) st.points=d.points;
@@ -1206,8 +1233,144 @@ function makePergola(f){ const pw=f.pw||3,pl=f.pl||3,ph=f.ph||2.2; const g=new T
   if(sd.left)  addPanel(pl,0,oz,Math.PI/2);
   if(sd.right) addPanel(pl,pw,oz,Math.PI/2);
   g.userData.shadeMesh=roof; return g; }
+/* ---- Pool / Car / Fence / Driveway ---- */
+function scalePoly(pts,s){ const cx=pts.reduce((a,p)=>a+p.x,0)/pts.length, cz=pts.reduce((a,p)=>a+p.z,0)/pts.length;
+  return pts.map(p=>({x:cx+(p.x-cx)*s, z:cz+(p.z-cz)*s})); }
+function poolBasePoints(f){
+  const shape=f.shape||'rect'; const pw=Math.max(0.5,f.pw||4), pl=Math.max(0.5,f.pl||8);
+  if(shape==='oval'){ const N=40,pts=[]; for(let i=0;i<N;i++){ const a=i/N*Math.PI*2; pts.push({x:pw/2+Math.cos(a)*pw/2, z:pl/2+Math.sin(a)*pl/2}); } return pts; }
+  if(shape==='kidney'){ const N=48,pts=[]; for(let i=0;i<N;i++){ const a=i/N*Math.PI*2; const r=(pw/2)*(1+0.32*Math.sin(a)); pts.push({x:pw/2+Math.cos(a)*r, z:pl/2+Math.sin(a)*(pl/2)}); } return pts; }
+  if(shape==='custom'){ if(f.vertices&&f.vertices.length>=3) return f.vertices.map(v=>({x:v.x,z:v.z})); return [{x:0,z:0},{x:pw,z:0},{x:pw,z:pl},{x:0,z:pl}]; }
+  return [{x:0,z:0},{x:pw,z:0},{x:pw,z:pl},{x:0,z:pl}];
+}
+/* Flat, always-upward-facing triangulated polygon mesh (fan from centroid). Robust to any point winding. */
+function flatPolyMesh(pts,y,material){
+  const cx=pts.reduce((a,p)=>a+p.x,0)/pts.length, cz=pts.reduce((a,p)=>a+p.z,0)/pts.length;
+  const tris=[];
+  for(let i=0;i<pts.length;i++){
+    const a=pts[i], b=pts[(i+1)%pts.length];
+    const crossY=(a.z-cz)*(b.x-cx)-(a.x-cx)*(b.z-cz);
+    if(crossY>=0) tris.push(cx,y,cz, a.x,y,a.z, b.x,y,b.z);
+    else tris.push(cx,y,cz, b.x,y,b.z, a.x,y,a.z);
+  }
+  const geo=new THREE.BufferGeometry(); geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(tris),3)); geo.computeVertexNormals();
+  return new THREE.Mesh(geo,material);
+}
+/* Flat ring (annulus) between two matching-length concentric point loops, at a fixed height y. */
+function ringMesh(outerPts,innerPts,y,material){
+  const tris=[]; const n=outerPts.length;
+  const pushTri=(ax,az,bx,bz,cx,cz)=>{
+    const crossY=(bz-az)*(cx-ax)-(bx-ax)*(cz-az);
+    if(crossY>=0) tris.push(ax,y,az, bx,y,bz, cx,y,cz);
+    else tris.push(ax,y,az, cx,y,cz, bx,y,bz);
+  };
+  for(let i=0;i<n;i++){
+    const oa=outerPts[i], ob=outerPts[(i+1)%n], ia=innerPts[i], ib=innerPts[(i+1)%n];
+    pushTri(oa.x,oa.z, ob.x,ob.z, ib.x,ib.z);
+    pushTri(oa.x,oa.z, ib.x,ib.z, ia.x,ia.z);
+  }
+  const geo=new THREE.BufferGeometry(); geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(tris),3)); geo.computeVertexNormals();
+  return new THREE.Mesh(geo,material);
+}
+/* Vertical wall strip around a closed polygon boundary, from yTop down to yBottom. */
+function wallStripMesh(pts,yTop,yBottom,material){
+  const tris=[]; const n=pts.length;
+  for(let i=0;i<n;i++){
+    const a=pts[i], b=pts[(i+1)%n];
+    tris.push(a.x,yTop,a.z, b.x,yTop,b.z, b.x,yBottom,b.z);
+    tris.push(a.x,yTop,a.z, b.x,yBottom,b.z, a.x,yBottom,a.z);
+  }
+  const geo=new THREE.BufferGeometry(); geo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(tris),3)); geo.computeVertexNormals();
+  return new THREE.Mesh(geo,material);
+}
+function makePool(f){
+  /* Rendered as a raised rim above ground level (y>=0) so it always stays visible above the
+     opaque lawn plane, which has no cut-out under furniture. f.pd is kept as the informational
+     depth value (shown in labels) but the visual wall height is a smaller, always-positive rim. */
+  const g=new THREE.Group();
+  const base=poolBasePoints(f);
+  const pd=Math.max(0.3,Math.min(2.2,f.pd||1.2));
+  const wallH=Math.max(0.15,Math.min(0.5,pd*0.25));
+  const copingMat=new THREE.MeshStandardMaterial({color:0xd8d3c4,roughness:0.9,side:THREE.DoubleSide});
+  const tileMat=new THREE.MeshStandardMaterial({color:0x8fa6ac,roughness:0.75,side:THREE.DoubleSide});
+  const waterMat=new THREE.MeshStandardMaterial({color:f.color||'#2f9bcf',roughness:0.12,metalness:0.05,transparent:true,opacity:0.85,side:THREE.DoubleSide});
+  const coping=ringMesh(scalePoly(base,1.12),base,wallH+0.02,copingMat); coping.receiveShadow=true; coping.castShadow=true; g.add(coping);
+  const wall=wallStripMesh(base,wallH,0.01,tileMat); wall.receiveShadow=true; wall.castShadow=true; g.add(wall);
+  const floor=flatPolyMesh(scalePoly(base,0.98),0.01,tileMat); floor.receiveShadow=true; g.add(floor);
+  const water=flatPolyMesh(scalePoly(base,0.9),wallH*0.7,waterMat); g.add(water);
+  return g;
+}
+function makeCar(f){
+  const g=new THREE.Group();
+  const cw=Math.max(1.2,f.cw||1.8), cl=Math.max(2,f.cl||4.5), ch=Math.max(1,f.ch||1.5);
+  const bodyMat=new THREE.MeshStandardMaterial({color:f.color||'#3a5f8a',roughness:0.4,metalness:0.3});
+  const glassMat=new THREE.MeshStandardMaterial({color:0x1a2530,roughness:0.2,metalness:0.1,transparent:true,opacity:0.7});
+  const wheelMat=new THREE.MeshStandardMaterial({color:0x111111,roughness:0.9});
+  const bodyH=ch*0.55;
+  const body=new THREE.Mesh(new THREE.BoxGeometry(cw,bodyH,cl),bodyMat);
+  body.position.set(cw/2,bodyH/2+0.25,cl/2); body.castShadow=true; body.receiveShadow=true; g.add(body);
+  const cabinH=Math.max(0.2,ch-bodyH-0.25), cabinL=cl*0.55;
+  const cabin=new THREE.Mesh(new THREE.BoxGeometry(cw*0.92,cabinH,cabinL),glassMat);
+  cabin.position.set(cw/2,bodyH+0.25+cabinH/2,cl/2); cabin.castShadow=true; g.add(cabin);
+  const wheelR=Math.min(0.35,ch*0.22), wheelW=cw*0.12;
+  const wheelGeo=new THREE.CylinderGeometry(wheelR,wheelR,wheelW,16);
+  const offX=cw/2-wheelW*0.6, offZ=cl/2-wheelR*1.4;
+  [[-offX,-offZ],[offX,-offZ],[-offX,offZ],[offX,offZ]].forEach(([x,z])=>{
+    const wheel=new THREE.Mesh(wheelGeo,wheelMat); wheel.rotation.z=Math.PI/2; wheel.position.set(cw/2+x,wheelR,cl/2+z); wheel.castShadow=true; g.add(wheel);
+  });
+  return g;
+}
+function makeFence(f){
+  const g=new THREE.Group();
+  const fl=Math.max(0.5,f.fl||3), fh=Math.max(0.5,f.fh||1.8);
+  const mat=new THREE.MeshStandardMaterial({color:f.color||'#8b5a2b',roughness:0.85});
+  const postMat=new THREE.MeshStandardMaterial({color:0x4a3320,roughness:0.85});
+  const panel=new THREE.Mesh(new THREE.BoxGeometry(fl,fh,0.05),mat);
+  panel.position.set(fl/2,fh/2,0); panel.castShadow=true; panel.receiveShadow=true; g.add(panel);
+  const postGeo=new THREE.BoxGeometry(0.08,fh+0.1,0.08);
+  const n=Math.max(2,Math.round(fl/1.8)+1);
+  for(let i=0;i<n;i++){ const x=n>1?i/(n-1)*fl:0; const post=new THREE.Mesh(postGeo,postMat); post.position.set(x,(fh+0.1)/2,0); post.castShadow=true; g.add(post); }
+  return g;
+}
+function makeDriveway(f){
+  const dw=Math.max(0.5,f.dw||3), dl=Math.max(0.5,f.dl||6);
+  const mat=new THREE.MeshStandardMaterial({color:f.color||'#9a9a9a',roughness:0.95});
+  const mesh=new THREE.Mesh(new THREE.BoxGeometry(dw,0.03,dl),mat);
+  mesh.position.set(dw/2,0.015,dl/2); mesh.receiveShadow=true;
+  const g=new THREE.Group(); g.add(mesh); return g;
+}
+function furnColor(type){
+  return type==='table'?'#d9a066':type==='pergola'?'#aab3bd':type==='pool'?'#2f9bcf':type==='car'?'#3a5f8a':type==='fence'?'#8b5a2b':type==='driveway'?'#9a9a9a':'#7eb8da';
+}
+function furnHalfExtents(f,type){
+  if(type==='table') return {hx:(f.tw||1.1)/2, hz:(f.tl||0.7)/2};
+  if(type==='pergola') return {hx:(f.pw||3)/2, hz:(f.pl||3)/2};
+  if(type==='pool') return {hx:(f.pw||4)/2, hz:(f.pl||8)/2};
+  if(type==='car') return {hx:(f.cw||1.8)/2, hz:(f.cl||4.5)/2};
+  if(type==='fence') return {hx:(f.fl||3)/2, hz:0};
+  if(type==='driveway') return {hx:(f.dw||3)/2, hz:(f.dl||6)/2};
+  return {hx:0,hz:0};
+}
+function furnTopY(f,type){
+  if(type==='table') return f.th||0.74;
+  if(type==='pergola') return f.ph||2.2;
+  if(type==='pool') return 0.05;
+  if(type==='car') return f.ch||1.5;
+  if(type==='fence') return f.fh||1.8;
+  if(type==='driveway') return 0.05;
+  return 0.45;
+}
+function furnDimsText(f,type){
+  if(type==='table') return `B ${fmt(f.tw)} · L ${fmt(f.tl)} · H ${fmt(f.th)} m`;
+  if(type==='pergola') return `B ${fmt(f.pw)} · L ${fmt(f.pl)} · H ${fmt(f.ph)} m`;
+  if(type==='pool') return `B ${fmt(f.pw)} · L ${fmt(f.pl)} · D ${fmt(f.pd)} m`;
+  if(type==='car') return `B ${fmt(f.cw)} · L ${fmt(f.cl)} · H ${fmt(f.ch)} m`;
+  if(type==='fence') return `L ${fmt(f.fl)} · H ${fmt(f.fh)} m`;
+  if(type==='driveway') return `B ${fmt(f.dw)} · L ${fmt(f.dl)} m`;
+  return `H ${fmt(0.45)} m`;
+}
 function buildFurniture(){ furnGroup.clear(); pergolaRoof=null; const B=refWorld();
-  const makers={table:makeTable,chair:makeChair,pergola:makePergola};
+  const makers={table:makeTable,chair:makeChair,pergola:makePergola,pool:makePool,car:makeCar,fence:makeFence,driveway:makeDriveway};
   Object.keys(S.furniture).forEach(key=>{ const f=S.furniture[key]; if(!f||!f.on) return;
     const type=furnType(key); const maker=makers[type]; if(!maker) return;
     const obj=maker(f); obj.position.set(B.x+f.x,0,B.z+f.y); obj.rotation.y=f.yaw*DEG; obj.userData.furnKey=key; furnGroup.add(obj);
@@ -1307,7 +1470,7 @@ function buildDimensions(){
   Object.keys(S.furniture).forEach(key=>{
     const f=S.furniture[key]; if(!f||!f.on) return;
     const type=furnType(key);
-    const color=type==='table'?'#d9a066':type==='pergola'?'#aab3bd':'#7eb8da';
+    const color=furnColor(type);
     if(Math.abs(f.x)>0.1) addDimLine(labelsGroup,new THREE.Vector3(Bx,gY,Bz),new THREE.Vector3(Bx+f.x,gY,Bz),'X '+fmt(f.x)+' m',color);
     if(Math.abs(f.y)>0.1) addDimLine(labelsGroup,new THREE.Vector3(Bx+f.x,gY,Bz),new THREE.Vector3(Bx+f.x,gY,Bz+f.y),'Y '+fmt(f.y)+' m',color);
   });
@@ -1324,8 +1487,8 @@ function buildDimensions(){
     Object.keys(S.furniture).forEach(key=>{
       const f=S.furniture[key]; if(!f||!f.on) return;
       const type=furnType(key);
-      const color=type==='table'?'#d9a066':type==='pergola'?'#aab3bd':'#7eb8da';
-      const topY=type==='table'?(f.th||0.74):type==='pergola'?(f.ph||2.2):0.45;
+      const color=furnColor(type);
+      const topY=furnTopY(f,type);
       const name=furnLabel(type);
       const spr=makeTextSprite([name,`X ${fmt(f.x)}  Y ${fmt(f.y)}`],color); spr.position.set(B.x+f.x,topY+0.4,B.z+f.y); labelsGroup.add(spr);
     });
@@ -1341,13 +1504,10 @@ function buildLabels(){
     Object.keys(S.furniture).forEach(key=>{
       const f=S.furniture[key]; if(!f||!f.on) return;
       const type=furnType(key);
-      const color=type==='table'?'#d9a066':type==='pergola'?'#aab3bd':'#7eb8da';
+      const color=furnColor(type);
       const name=furnLabel(type);
       const yr=(f.yaw||0)*DEG, ca=Math.cos(yr), sa=Math.sin(yr);
-      let topY,dims,hx,hz;
-      if(type==='table'){ topY=f.th||0.74; dims=`B ${fmt(f.tw)} · L ${fmt(f.tl)} · H ${fmt(f.th)} m`; hx=(f.tw||1.1)/2; hz=(f.tl||0.7)/2; }
-      else if(type==='pergola'){ topY=f.ph||2.2; dims=`B ${fmt(f.pw)} · L ${fmt(f.pl)} · H ${fmt(f.ph)} m`; hx=(f.pw||3)/2; hz=(f.pl||3)/2; }
-      else { topY=0.45; dims=`H ${fmt(0.45)} m`; hx=0; hz=0; }
+      const topY=furnTopY(f,type), dims=furnDimsText(f,type), {hx,hz}=furnHalfExtents(f,type);
       const cx=B.x+f.x + hx*ca - hz*sa, cz=B.z+f.y + hx*sa + hz*ca;
       const spr=makeTextSprite([name,`${t('lbl-corner-ecke')} X ${fmt(f.x)}  Y ${fmt(f.y)}`,dims],color);
       spr.position.set(cx, topY+0.45, cz); labelsGroup.add(spr);
@@ -2157,8 +2317,102 @@ function updateAll(){ updateRef(); updateRig(); updateRopeReadouts(); buildFurni
 /* ---- Persistenz ---- */
 let saveTimer=null;
 function touch(){ if(saveTimer) clearTimeout(saveTimer); saveTimer=setTimeout(()=>{ saveState(); snapshot(); },350); }
-function saveState(){ const j=JSON.stringify(S); try{ localStorage.setItem(STORE_KEY,j); }catch(e){} try{ document.cookie=STORE_KEY+'='+encodeURIComponent(j).slice(0,3900)+';path=/;max-age=31536000;SameSite=Lax'; }catch(e){} }
+function saveState(){ const j=JSON.stringify(S); try{ localStorage.setItem(STORE_KEY,j); }catch(e){} try{ document.cookie=STORE_KEY+'='+encodeURIComponent(j).slice(0,3900)+';path=/;max-age=31536000;SameSite=Lax'; }catch(e){} if(activeProjectId) saveProjectState(activeProjectId,S); }
 function loadState(){ try{ const v=localStorage.getItem(STORE_KEY); if(v) return JSON.parse(v); }catch(e){} try{ const m=document.cookie.match('(?:^|;)\\s*'+STORE_KEY+'=([^;]*)'); if(m) return JSON.parse(decodeURIComponent(m[1])); }catch(e){} return null; }
+
+/* ---- Projects (Photoshop-style document tabs) ---- */
+const PROJ_KEY='shade-projects-v1';
+let projectsReg=null; /* {list:[{id,name}], activeId} */
+let activeProjectId=null;
+function projectStateKey(id){ return 'shade-proj-state-'+id; }
+function saveProjectState(id,state){ try{ localStorage.setItem(projectStateKey(id),JSON.stringify(state)); }catch(e){} }
+function loadProjectState(id){ try{ const v=localStorage.getItem(projectStateKey(id)); if(v) return JSON.parse(v); }catch(e){} return null; }
+function saveProjectsReg(){ try{ localStorage.setItem(PROJ_KEY,JSON.stringify(projectsReg)); }catch(e){} }
+function loadProjectsReg(){ try{ const v=localStorage.getItem(PROJ_KEY); if(v) return JSON.parse(v); }catch(e){} return null; }
+function newProjectId(){ return 'p'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+function initProjects(){
+  const loaded=loadProjectsReg();
+  if(loaded && Array.isArray(loaded.list) && loaded.list.length){
+    projectsReg=loaded; activeProjectId=loaded.activeId||loaded.list[0].id;
+    if(!loaded.list.some(p=>p.id===activeProjectId)) activeProjectId=loaded.list[0].id;
+    const st=loadProjectState(activeProjectId);
+    if(st){ S=migrate(st)||defaultState(); }
+    else { saveProjectState(activeProjectId,S); }
+  } else {
+    const id=newProjectId();
+    projectsReg={ list:[{id,name:t('proj-default-name')+' 1'}], activeId:id };
+    activeProjectId=id;
+    saveProjectState(id,S);
+    saveProjectsReg();
+  }
+  renderProjectTabs();
+}
+function switchProject(id){
+  if(id===activeProjectId) return;
+  saveState();
+  const st=loadProjectState(id);
+  S = migrate(st) || defaultState();
+  activeProjectId=id;
+  projectsReg.activeId=id;
+  saveProjectsReg();
+  refreshUI(); snapshot(); updateHistButtons();
+  renderProjectTabs();
+}
+function addProjectTab(){
+  saveState();
+  const id=newProjectId();
+  const n=projectsReg.list.length+1;
+  projectsReg.list.push({id,name:t('proj-default-name')+' '+n});
+  projectsReg.activeId=id;
+  activeProjectId=id;
+  S=defaultState();
+  saveProjectState(id,S);
+  saveProjectsReg();
+  refreshUI(); snapshot(); updateHistButtons();
+  renderProjectTabs();
+}
+function closeProjectTab(id,evt){
+  if(evt) evt.stopPropagation();
+  if(projectsReg.list.length<=1) return;
+  if(!confirm(t('proj-close-confirm'))) return;
+  const idx=projectsReg.list.findIndex(p=>p.id===id);
+  if(idx<0) return;
+  projectsReg.list.splice(idx,1);
+  try{ localStorage.removeItem(projectStateKey(id)); }catch(e){}
+  if(id===activeProjectId){
+    const next=projectsReg.list[Math.max(0,idx-1)] || projectsReg.list[0];
+    activeProjectId=next.id;
+    projectsReg.activeId=next.id;
+    const st=loadProjectState(next.id);
+    S=migrate(st)||defaultState();
+    refreshUI(); snapshot(); updateHistButtons();
+  }
+  saveProjectsReg();
+  renderProjectTabs();
+}
+function renameProjectTab(id){
+  const p=projectsReg.list.find(p=>p.id===id); if(!p) return;
+  const name=prompt(t('proj-rename-prompt'),p.name);
+  if(name && name.trim()){ p.name=name.trim(); saveProjectsReg(); renderProjectTabs(); }
+}
+function renderProjectTabs(){
+  const host=document.getElementById('projectTabs'); if(!host) return;
+  host.innerHTML='';
+  projectsReg.list.forEach(p=>{
+    const tab=document.createElement('div'); tab.className='ptab'+(p.id===activeProjectId?' active':'');
+    const nameSpan=document.createElement('span'); nameSpan.className='pname'; nameSpan.textContent=p.name;
+    tab.appendChild(nameSpan);
+    const closeBtn=document.createElement('button'); closeBtn.className='pclose'; closeBtn.title=t('proj-close-title'); closeBtn.textContent='\u2715';
+    closeBtn.onclick=e=>closeProjectTab(p.id,e);
+    tab.appendChild(closeBtn);
+    tab.onclick=()=>switchProject(p.id);
+    tab.ondblclick=()=>renameProjectTab(p.id);
+    host.appendChild(tab);
+  });
+  const addBtn=document.createElement('button'); addBtn.id='ptabAdd'; addBtn.title=t('proj-add-title'); addBtn.textContent='+';
+  addBtn.onclick=addProjectTab;
+  host.appendChild(addBtn);
+}
 
 /* ---- Undo/Redo (bis 40 Schritte zurück) ---- */
 const HIST_MAX=41; /* aktueller Stand + 40 frühere */
@@ -2475,6 +2729,24 @@ function buildFurnitureEditors(){
     let sizeHtml='';
     if(type==='table') sizeHtml=rowHTML(t('lbl-bw'),'tw',0.5,3,0.05,f.tw,'m',D.tw)+rowHTML(t('lbl-bl'),'tl',0.5,3,0.05,f.tl,'m',D.tl)+rowHTML(t('lbl-height'),'th',0.4,1.1,0.01,f.th,'m',D.th);
     if(type==='pergola') sizeHtml=rowHTML(t('lbl-bw'),'pw',1,15,0.1,f.pw,'m',D.pw)+rowHTML(t('lbl-bl'),'pl',1,15,0.1,f.pl,'m',D.pl)+rowHTML(t('lbl-height'),'ph',1.8,3,0.05,f.ph,'m',D.ph);
+    if(type==='car') sizeHtml=rowHTML(t('lbl-bw'),'cw',1.2,2.4,0.05,f.cw,'m',D.cw)+rowHTML(t('lbl-bl'),'cl',2,6,0.05,f.cl,'m',D.cl)+rowHTML(t('lbl-height'),'ch',1,2.2,0.05,f.ch,'m',D.ch)+`<div class="row"><label>${t('lbl-color')}</label><input class="fcol" type="color" value="${f.color}"></div>`;
+    if(type==='fence') sizeHtml=rowHTML(t('lbl-bl'),'fl',0.5,20,0.1,f.fl,'m',D.fl)+rowHTML(t('lbl-height'),'fh',0.3,3,0.05,f.fh,'m',D.fh)+`<div class="row"><label>${t('lbl-color')}</label><input class="fcol" type="color" value="${f.color}"></div>`;
+    if(type==='driveway') sizeHtml=rowHTML(t('lbl-bw'),'dw',0.5,10,0.1,f.dw,'m',D.dw)+rowHTML(t('lbl-bl'),'dl',0.5,30,0.1,f.dl,'m',D.dl)+`<div class="row"><label>${t('lbl-color')}</label><input class="fcol" type="color" value="${f.color}"></div>`;
+    if(type==='pool'){
+      const pshape=f.shape||'rect';
+      const shapeSel=`<div class="row"><label>${t('lbl-pool-shape')}</label><select class="pshape" style="flex:1">`+
+        `<option value="rect" ${pshape==='rect'?'selected':''}>${t('pool-shape-rect')}</option>`+
+        `<option value="oval" ${pshape==='oval'?'selected':''}>${t('pool-shape-oval')}</option>`+
+        `<option value="kidney" ${pshape==='kidney'?'selected':''}>${t('pool-shape-kidney')}</option>`+
+        `<option value="custom" ${pshape==='custom'?'selected':''}>${t('pool-shape-custom')}</option></select></div>`;
+      if(pshape==='custom'){
+        if(!f.vertices||f.vertices.length<3) f.vertices=[{x:0,z:0},{x:f.pw||4,z:0},{x:f.pw||4,z:f.pl||8},{x:0,z:f.pl||8}];
+        const vertsHtml=f.vertices.map((v,vi)=>`<div class="row"><label>P${vi+1}</label><input type="text" inputmode="decimal" class="num pvx" data-vi="${vi}" style="width:auto;flex:1" value="${fmt(v.x,2)}"><span class="unit">m</span><input type="text" inputmode="decimal" class="num pvz" data-vi="${vi}" style="width:auto;flex:1" value="${fmt(v.z,2)}"><span class="unit">m</span>${f.vertices.length>3?`<button class="minib rm-vertex" data-vi="${vi}">✕</button>`:''}</div>`).join('');
+        sizeHtml=shapeSel+vertsHtml+`<button class="btn secondary add-vertex" style="width:100%;margin-top:4px">${t('btn-add-vertex')}</button>`+rowHTML(t('lbl-depth'),'pd',0.4,2.2,0.05,f.pd,'m',D.pd)+`<div class="row"><label>${t('lbl-color')}</label><input class="pcol" type="color" value="${f.color}"></div>`;
+      } else {
+        sizeHtml=shapeSel+rowHTML(t('lbl-bw'),'pw',1,15,0.1,f.pw,'m',D.pw)+rowHTML(t('lbl-bl'),'pl',1,15,0.1,f.pl,'m',D.pl)+rowHTML(t('lbl-depth'),'pd',0.4,2.2,0.05,f.pd,'m',D.pd)+`<div class="row"><label>${t('lbl-color')}</label><input class="pcol" type="color" value="${f.color}"></div>`;
+      }
+    }
     let extraHtml='';
     if(type==='pergola'){ const sd=f.sides||{}; extraHtml=`<div style="margin-top:6px;font-size:11px;color:var(--muted)">${t('perg-sides')}</div>
       <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:12px;margin-top:2px">
@@ -2495,24 +2767,48 @@ function buildFurnitureEditors(){
     if(type==='pergola'){ link(card,'pw',1,15,v=>{f.pw=v;buildFurniture();updateSun();}); link(card,'pl',1,15,v=>{f.pl=v;buildFurniture();updateSun();}); link(card,'ph',1.8,3,v=>{f.ph=v;buildFurniture();updateSun();});
       f.sides=f.sides||{front:false,back:false,left:false,right:false};
       [['sd-front','front'],['sd-back','back'],['sd-left','left'],['sd-right','right']].forEach(([cls,k])=>{ const cb=q('.'+cls); if(cb) cb.onchange=e=>{f.sides[k]=e.target.checked;buildFurniture();updateSun();touch();}; }); }
+    if(type==='car'){ link(card,'cw',1.2,2.4,v=>{f.cw=v;buildFurniture();updateSun();}); link(card,'cl',2,6,v=>{f.cl=v;buildFurniture();updateSun();}); link(card,'ch',1,2.2,v=>{f.ch=v;buildFurniture();updateSun();}); q('.fcol').oninput=e=>{f.color=e.target.value;buildFurniture();touch();}; }
+    if(type==='fence'){ link(card,'fl',0.5,20,v=>{f.fl=v;buildFurniture();updateSun();}); link(card,'fh',0.3,3,v=>{f.fh=v;buildFurniture();updateSun();}); q('.fcol').oninput=e=>{f.color=e.target.value;buildFurniture();touch();}; }
+    if(type==='driveway'){ link(card,'dw',0.5,10,v=>{f.dw=v;buildFurniture();updateSun();}); link(card,'dl',0.5,30,v=>{f.dl=v;buildFurniture();updateSun();}); q('.fcol').oninput=e=>{f.color=e.target.value;buildFurniture();touch();}; }
+    if(type==='pool'){
+      q('.pshape').onchange=e=>{ f.shape=e.target.value; buildFurnitureEditors(); buildFurniture(); updateSun(); touch(); };
+      if(f.shape==='custom'){
+        card.querySelectorAll('.pvx').forEach(inp=>inp.onchange=e=>{ const vi=+e.target.dataset.vi; f.vertices[vi].x=pn(e.target.value); buildFurniture(); updateSun(); touch(); });
+        card.querySelectorAll('.pvz').forEach(inp=>inp.onchange=e=>{ const vi=+e.target.dataset.vi; f.vertices[vi].z=pn(e.target.value); buildFurniture(); updateSun(); touch(); });
+        card.querySelectorAll('.rm-vertex').forEach(btn=>btn.onclick=()=>{ const vi=+btn.dataset.vi; if(f.vertices.length>3){ f.vertices.splice(vi,1); buildFurnitureEditors(); buildFurniture(); updateSun(); touch(); } });
+        const addBtn=q('.add-vertex'); if(addBtn) addBtn.onclick=()=>{ const last=f.vertices[f.vertices.length-1]; f.vertices.push({x:last.x,z:last.z}); buildFurnitureEditors(); buildFurniture(); updateSun(); touch(); };
+      } else {
+        link(card,'pw',1,15,v=>{f.pw=v;buildFurniture();updateSun();}); link(card,'pl',1,15,v=>{f.pl=v;buildFurniture();updateSun();});
+      }
+      link(card,'pd',0.4,2.2,v=>{f.pd=v;buildFurniture();updateSun();});
+      q('.pcol').oninput=e=>{ f.color=e.target.value; buildFurniture(); touch(); };
+    }
     host.appendChild(card);
   });
   const addWrap=document.createElement('div'); addWrap.style.marginTop='8px';
-  addWrap.innerHTML=`<div style="display:flex;gap:6px">`+
-    `<button class="btn secondary" data-type="table" style="flex:1">+ ${t('furn-table')}</button>`+
-    `<button class="btn secondary" data-type="chair" style="flex:1">+ ${t('furn-chair')}</button>`+
-    `<button class="btn secondary" data-type="pergola" style="flex:1">+ ${t('furn-pergola')}</button>`+
+  addWrap.innerHTML=`<div style="display:flex;gap:6px;flex-wrap:wrap">`+
+    `<button class="btn secondary" data-type="table" style="flex:1;min-width:90px">+ ${t('furn-table')}</button>`+
+    `<button class="btn secondary" data-type="chair" style="flex:1;min-width:90px">+ ${t('furn-chair')}</button>`+
+    `<button class="btn secondary" data-type="pergola" style="flex:1;min-width:90px">+ ${t('furn-pergola')}</button>`+
+    `<button class="btn secondary" data-type="pool" style="flex:1;min-width:90px">+ ${t('furn-pool')}</button>`+
+    `<button class="btn secondary" data-type="car" style="flex:1;min-width:90px">+ ${t('furn-car')}</button>`+
+    `<button class="btn secondary" data-type="fence" style="flex:1;min-width:90px">+ ${t('furn-fence')}</button>`+
+    `<button class="btn secondary" data-type="driveway" style="flex:1;min-width:90px">+ ${t('furn-driveway')}</button>`+
     `</div>`;
   addWrap.querySelectorAll('button[data-type]').forEach(b=>b.onclick=()=>addFurniture(b.dataset.type));
   host.appendChild(addWrap);
 }
-function furnType(key){ if(key.startsWith('table')) return 'table'; if(key.startsWith('pergola')) return 'pergola'; return 'chair'; }
+function furnType(key){ if(key.startsWith('table')) return 'table'; if(key.startsWith('pergola')) return 'pergola'; if(key.startsWith('pool')) return 'pool'; if(key.startsWith('car')) return 'car'; if(key.startsWith('fence')) return 'fence'; if(key.startsWith('driveway')) return 'driveway'; return 'chair'; }
 function furnDefaults(type){
   if(type==='table') return {on:true,x:0,y:0,yaw:0,tw:0.9,tl:1.58,th:0.74};
   if(type==='pergola') return {on:true,x:0,y:0,yaw:0,pw:2.9,pl:2.9,ph:2.4,sides:{front:false,back:false,left:false,right:false}};
+  if(type==='pool') return {on:true,x:0,y:0,yaw:0,shape:'rect',pw:4,pl:8,pd:1.2,color:'#2f9bcf',vertices:null};
+  if(type==='car') return {on:true,x:0,y:0,yaw:0,cw:1.8,cl:4.5,ch:1.5,color:'#3a5f8a'};
+  if(type==='fence') return {on:true,x:0,y:0,yaw:0,fl:3,fh:1.8,color:'#8b5a2b'};
+  if(type==='driveway') return {on:true,x:0,y:0,yaw:0,dw:3,dl:6,color:'#9a9a9a'};
   return {on:true,x:0,y:0,yaw:0};
 }
-function furnLabel(type){ return type==='table'?t('furn-table'):type==='pergola'?t('furn-pergola'):t('furn-chair'); }
+function furnLabel(type){ return type==='table'?t('furn-table'):type==='pergola'?t('furn-pergola'):type==='pool'?t('furn-pool'):type==='car'?t('furn-car'):type==='fence'?t('furn-fence'):type==='driveway'?t('furn-driveway'):t('furn-chair'); }
 function nextFurnKey(type){ let i=1; while(S.furniture[type+i]) i++; return type+i; }
 function addFurniture(type){
   const key=nextFurnKey(type);
@@ -2569,7 +2865,7 @@ function buildMeasureEditors(){
   dCard.querySelectorAll('.ms-diag').forEach((inp,i)=>{ const key=dkeys[i]; inp.onchange=e=>{ const v=parseFloat(String(e.target.value).replace(',','.')); S.measure.diagonals[key]=isNaN(v)?0:v; updateMeasurePreview(); touch(); }; });
 
   const dsel=$('msDatum'); dsel.innerHTML=''; for(let i=0;i<n;i++){ const ch=pointLetter(i); const o=document.createElement('option'); o.value=ch; o.textContent=ch; if(ch===S.measure.datum) o.selected=true; dsel.appendChild(o); }
-  dsel.onchange=e=>{ S.measure.datum=e.target.value; updateMeasureOffsets(); touch(); };
+  dsel.onchange=e=>{ S.measure.datum=e.target.value; updateMeasureOffsets(); buildMeasurePointCards(); touch(); };
   const matIn=$('msMaterial'); matIn.value=S.measure.material; matIn.onchange=e=>{ S.measure.material=e.target.value; touch(); };
   const colIn=$('msColour'); colIn.value=S.measure.colour; colIn.oninput=e=>{ S.measure.colour=e.target.value; updateMeasurePreview(); touch(); };
   const notesIn=$('msNotes'); notesIn.value=S.measure.notes; notesIn.onchange=e=>{ S.measure.notes=e.target.value; touch(); };
@@ -2678,17 +2974,29 @@ function buildMeasurePreview(res){
 function buildMeasurePointCards(){
   const host=$('msPointCards'); if(!host) return;
   host.innerHTML='';
+  const dch=S.measure.datum||'A'; const datumIdx=Math.max(0,Math.min(S.measure.points.length-1,dch.charCodeAt(0)-65));
+  const datumP=S.measure.points[datumIdx];
   S.measure.points.forEach((p,i)=>{
     const card=document.createElement('div'); card.className='card ms-point-card';
+    const isDatum=(i===datumIdx);
+    const fixVal=Math.round(((p.height||0)-(datumP.height||0))*1000);
     card.innerHTML=`<h3>Point ${p.letter}</h3>
       ${numInputRow('Height','ms-h',p.height,'m')}
+      <div class="row"><label>Fixing pt height</label><input type="text" inputmode="decimal" class="num ms-fixh" style="width:auto;flex:1" value="${isDatum?'DATUM':fixVal}" ${isDatum?'disabled':''}><span class="unit">mm</span></div>
       <div class="row"><label>Shackle</label><select class="ms-shackle" style="flex:1">${hardwareOptions('shackles',p.shackle&&p.shackle.type)}</select></div>
       <div class="row"><label>Turnbuckle</label><select class="ms-turnbuckle" style="flex:1">${hardwareOptions('turnbuckles',p.turnbuckle&&p.turnbuckle.type)}</select></div>
       ${numInputRow('Tension / gap','ms-tension',p.tension,'m')}
       ${numInputRow('X offset','ms-xoff',p.offsetX,'m')}
       ${numInputRow('Y offset','ms-yoff',p.offsetY,'m')}`;
     const q=s=>card.querySelector(s);
-    q('.ms-h').onchange=e=>{ const v=parseFloat(String(e.target.value).replace(',','.')); p.height=isNaN(v)?2.5:v; touch(); };
+    q('.ms-h').onchange=e=>{ const v=parseFloat(String(e.target.value).replace(',','.')); p.height=isNaN(v)?2.5:v; touch(); buildMeasurePointCards(); };
+    if(!isDatum){
+      q('.ms-fixh').onchange=e=>{
+        const v=parseFloat(String(e.target.value).replace(',','.'));
+        p.height=(datumP.height||0)+(isNaN(v)?0:v)/1000;
+        touch(); buildMeasurePointCards();
+      };
+    }
     q('.ms-shackle').onchange=e=>{ p.shackle=findHardware('shackles',e.target.value); touch(); };
     q('.ms-turnbuckle').onchange=e=>{ p.turnbuckle=findHardware('turnbuckles',e.target.value); touch(); };
     q('.ms-tension').onchange=e=>{ const v=parseFloat(String(e.target.value).replace(',','.')); p.tension=isNaN(v)?0.05:v; touch(); };
@@ -2818,6 +3126,7 @@ renderer.domElement.addEventListener('dblclick',e=>{ raycaster.setFromCamera(ndc
 $('panel').addEventListener('dblclick',e=>{ const el=e.target; if(el.tagName==='INPUT'&&el.type==='range'&&el.dataset.default!==undefined){ el.value=el.dataset.default; el.dispatchEvent(new Event('input',{bubbles:true})); } });
 
 applyTranslations();
+initProjects();
 refreshUI(); snapshot(); updateHistButtons(); onResize(); animate();
 document.querySelectorAll('.group > h2').forEach(h=>h.addEventListener('click',()=>h.parentElement.classList.toggle('collapsed')));
 </script>
