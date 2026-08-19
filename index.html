@@ -3190,51 +3190,147 @@ $('detailsClose').onclick=closeDetailsModal;
 $('detailsModal').addEventListener('click',e=>{ if(e.target.id==='detailsModal') closeDetailsModal(); });
 $('miJobDetails').onclick=openDetailsModal;
 
-/* ---- Supplier PDF export ---- */
+/* ---- Supplier PDF export (styled to match the app's dark green / sun theme) ---- */
 function exportSupplierPDF(){
   if(!window.jspdf){ showToast('PDF library still loading, please try again in a moment.'); return; }
   const { jsPDF }=window.jspdf;
   const doc=new jsPDF({unit:'mm',format:'a4'});
   const d=S.details, ms=S.measure;
-  let y=15;
-  const line=(txt,size,bold)=>{ doc.setFontSize(size||10.5); doc.setFont(undefined,bold?'bold':'normal');
-    const wrapped=doc.splitTextToSize(String(txt),180);
-    wrapped.forEach(w=>{ if(y>282){ doc.addPage(); y=15; } doc.text(w,15,y); y+=(size||10.5)*0.5+2; }); };
-  const rule=()=>{ if(y>282){ doc.addPage(); y=15; } doc.setDrawColor(200); doc.line(15,y,195,y); y+=4; };
-  line('Shade Sail Order — Supplier Sheet',16,true);
-  line('Generated '+new Date().toLocaleString(),9);
-  y+=1; rule();
-  line('Customer Details',12,true);
-  line('Customer Name: '+(d.customerName||'-'));
-  line('Job Number: '+(d.jobNumber||'-'));
-  line('Measurer: '+(d.measurer||'-'));
-  line('Address: '+([d.street,d.suburb,d.state,d.postcode].filter(Boolean).join(', ')||'-'));
-  line('Phone: '+(d.phone||'-')+'   Fax: '+(d.fax||'-'));
-  line('Email: '+(d.email||'-'));
-  y+=1; rule();
-  line('Manufacturing',12,true);
-  line('Delivery Option: '+d.deliveryOption+'    Fold Direction: '+d.foldDirection);
-  line('Cable Style: '+d.cableStyle+'    Cable Size: '+d.cableSize);
-  line('Corner Fittings: '+(d.cornerFittings||'-'));
-  line('Turn Buckle Size: '+d.tBuckleSize+'    D Shackle Size: '+d.dShackleSize+'    Toggle Size: '+(d.toggleSize||'-'));
-  line('Take off – Lacing: '+d.takeOffLacing+'mm   Toggles: '+d.takeOffToggle+'mm   T-Buckle: '+d.takeOffTBuckle+'mm   D.S.: '+d.takeOffDS+'mm');
-  line('Offset: '+d.offsetPct+'%');
-  y+=1; rule();
-  line('Sail Measurements ('+ms.n+' points, datum '+(ms.datum||'A')+')',12,true);
-  line('Material: '+(ms.material||'-')+'    Colour: '+(ms.colour||'-'));
-  if(ms.notes) line('Notes: '+ms.notes);
-  y+=1;
-  measureSideKeys(ms.n).forEach((k,i)=>line(k+':  '+(ms.sides[i]||0)+' mm'));
-  measureDiagonalKeys(ms.n).forEach(k=>line(k+' (diagonal):  '+(ms.diagonals[k]||0)+' mm'));
-  y+=1; rule();
-  line('Fixing Points',12,true);
+  const C={ panel:[26,60,43], panel2:[36,82,61], sun:[255,184,28], sunText:[38,28,4], text:[32,38,34], muted:[110,124,116], line:[188,205,196], zebra:[236,243,238] };
+  const pageW=210, pageH=297, marginX=14, contentW=pageW-marginX*2;
+  let y=36;
+
+  function bandTop(first){
+    doc.setFillColor(...C.panel);
+    doc.rect(0,0,pageW,first?30:16,'F');
+    doc.setFillColor(...C.sun);
+    doc.rect(0,first?30:16,pageW,1,'F');
+    if(first){
+      doc.setTextColor(...C.sun); doc.setFont(undefined,'bold'); doc.setFontSize(18);
+      doc.text('Shade Sail Order',marginX,15);
+      doc.setFont(undefined,'normal'); doc.setFontSize(10.5); doc.setTextColor(220,232,224);
+      doc.text('Supplier Sheet',marginX,22);
+      doc.setFontSize(8.5); doc.setTextColor(190,208,198);
+      doc.text('Generated '+new Date().toLocaleString(),pageW-marginX,15,{align:'right'});
+      const bits=[d.jobNumber?('Job # '+d.jobNumber):null, d.customerName||null].filter(Boolean).join('   ·   ');
+      if(bits) doc.text(bits,pageW-marginX,22,{align:'right'});
+    } else {
+      doc.setTextColor(...C.sun); doc.setFont(undefined,'bold'); doc.setFontSize(9.5);
+      doc.text('Shade Sail Order — Supplier Sheet (cont.)',marginX,10.5);
+    }
+  }
+  function ensure(h){ if(y+h>pageH-16){ doc.addPage(); bandTop(false); y=24; } }
+  function sectionTitle(title){
+    ensure(11);
+    doc.setFillColor(...C.sun);
+    doc.rect(marginX,y,contentW,7,'F');
+    doc.setTextColor(...C.sunText); doc.setFont(undefined,'bold'); doc.setFontSize(10);
+    doc.text(title.toUpperCase(),marginX+3,y+5);
+    y+=7+3;
+  }
+  function kvGrid(pairs){
+    const cols=2, colW=contentW/cols;
+    for(let i=0;i<pairs.length;i+=cols){
+      ensure(6.6);
+      const rowIdx=i/cols;
+      if(rowIdx%2===0){ doc.setFillColor(...C.zebra); doc.rect(marginX,y,contentW,6.2,'F'); }
+      for(let c=0;c<cols;c++){
+        const pr=pairs[i+c]; if(!pr) continue;
+        const x=marginX+c*colW+2.5;
+        doc.setFont(undefined,'normal'); doc.setFontSize(7.5); doc.setTextColor(...C.muted);
+        doc.text(String(pr[0]).toUpperCase(),x,y+2.3);
+        doc.setFont(undefined,'bold'); doc.setFontSize(9.5); doc.setTextColor(...C.text);
+        doc.text(String(pr[1]!=null&&pr[1]!==''?pr[1]:'—'),x,y+5.3);
+      }
+      y+=6.2;
+    }
+    y+=3;
+  }
+  function textBlock(txt){
+    ensure(7);
+    doc.setFont(undefined,'normal'); doc.setFontSize(9); doc.setTextColor(...C.text);
+    doc.splitTextToSize(String(txt),contentW).forEach(l=>{ ensure(5); doc.text(l,marginX,y+3.5); y+=5; });
+    y+=2;
+  }
+  function table(headers,rows,colWidths){
+    ensure(9);
+    const startY=y; let x=marginX;
+    doc.setFillColor(...C.panel2);
+    doc.rect(marginX,y,contentW,6.4,'F');
+    doc.setTextColor(255,255,255); doc.setFont(undefined,'bold'); doc.setFontSize(8);
+    headers.forEach((h,i)=>{ doc.text(h,x+2.5,y+4.3); x+=colWidths[i]; });
+    y+=6.4;
+    doc.setFont(undefined,'normal'); doc.setFontSize(8.5);
+    rows.forEach((row,ri)=>{
+      ensure(5.8);
+      if(ri%2===0){ doc.setFillColor(...C.zebra); doc.rect(marginX,y,contentW,5.6,'F'); }
+      x=marginX;
+      row.forEach((cell,ci)=>{ doc.setTextColor(...C.text); doc.text(String(cell),x+2.5,y+3.9); x+=colWidths[ci]; });
+      y+=5.6;
+    });
+    doc.setDrawColor(...C.line); doc.setLineWidth(0.15);
+    doc.rect(marginX,startY,contentW,y-startY);
+    y+=4;
+  }
+
+  bandTop(true);
+
+  sectionTitle('Customer Details');
+  kvGrid([
+    ['Customer Name',d.customerName], ['Job Number',d.jobNumber],
+    ['Measurer',d.measurer], ['Phone',d.phone],
+    ['Email',d.email], ['Fax',d.fax],
+    ['Address',[d.street,d.suburb,d.state,d.postcode].filter(Boolean).join(', ')]
+  ]);
+
+  sectionTitle('Manufacturing Specification');
+  kvGrid([
+    ['Delivery Option',d.deliveryOption], ['Fold Direction',d.foldDirection],
+    ['Cable Style',d.cableStyle], ['Cable Size',d.cableSize],
+    ['Corner Fittings',d.cornerFittings], ['Offset',d.offsetPct+'%'],
+    ['Turn Buckle Size',d.tBuckleSize], ['D Shackle Size',d.dShackleSize],
+    ['Toggle Size',d.toggleSize]
+  ]);
+
+  sectionTitle('Take-off Lengths');
+  kvGrid([
+    ['Lacing',d.takeOffLacing+' mm'], ['Toggles',d.takeOffToggle+' mm'],
+    ['T-Buckle',d.takeOffTBuckle+' mm'], ['D.S.',d.takeOffDS+' mm']
+  ]);
+
+  sectionTitle('Sail Details');
+  kvGrid([
+    ['Fixing Points',ms.n], ['Datum',ms.datum||'A'],
+    ['Material',ms.material||'—'], ['Colour',ms.colour||'—']
+  ]);
+  if(ms.notes) textBlock('Notes: '+ms.notes);
+
+  const sideKeys=measureSideKeys(ms.n), dkeys=measureDiagonalKeys(ms.n);
+  const sdRows=[]; const maxLen=Math.max(sideKeys.length,dkeys.length);
+  for(let i=0;i<maxLen;i++){
+    sdRows.push([ sideKeys[i]||'', sideKeys[i]!=null?(ms.sides[i]||0)+' mm':'', dkeys[i]||'', dkeys[i]?((ms.diagonals[dkeys[i]]||0)+' mm'):'' ]);
+  }
+  sectionTitle('Side Lengths & Diagonals');
+  table(['SIDE','LENGTH','DIAGONAL','LENGTH'],sdRows,[32,50,32,contentW-32-50-32]);
+
   const datumIdx=Math.max(0,Math.min(ms.points.length-1,(ms.datum||'A').charCodeAt(0)-65));
   const datumP=ms.points[datumIdx];
-  ms.points.forEach((p,i)=>{
+  const fpRows=ms.points.map((p,i)=>{
     const isDatum=i===datumIdx;
     const fh=isDatum?'DATUM':((((p.height||0)-(datumP.height||0))*1000>=0?'+':'')+Math.round(((p.height||0)-(datumP.height||0))*1000)+' mm');
-    line('Point '+p.letter+':  Fixing height '+fh+'   Shackle '+((p.shackle&&p.shackle.type)||'-')+'   Turnbuckle '+((p.turnbuckle&&p.turnbuckle.type)||'-')+'   Tension/gap '+(p.tension!=null?p.tension:0)+' m');
+    return [p.letter, fh, (p.shackle&&p.shackle.type)||'-', (p.turnbuckle&&p.turnbuckle.type)||'-', (p.tension!=null?p.tension:0)+' m'];
   });
+  sectionTitle('Fixing Points');
+  table(['POINT','FIXING HEIGHT','SHACKLE','TURNBUCKLE','TENSION/GAP'],fpRows,[16,30,48,52,contentW-16-30-48-52]);
+
+  const totalPages=doc.internal.getNumberOfPages();
+  for(let p=1;p<=totalPages;p++){
+    doc.setPage(p);
+    doc.setFont(undefined,'normal'); doc.setFontSize(7.5); doc.setTextColor(...C.muted);
+    doc.text('Shade Sail Simulator — Supplier Sheet',marginX,pageH-6);
+    doc.text('Page '+p+' / '+totalPages,pageW-marginX,pageH-6,{align:'right'});
+  }
+
   const fname=((d.customerName||d.jobNumber)?(d.customerName+'_'+d.jobNumber):'shade-sail-order').replace(/[^a-z0-9_]+/gi,'_').replace(/^_+|_+$/g,'')||'shade-sail-order';
   doc.save(fname+'_supplier-sheet.pdf');
   showToast('Supplier PDF exported');
