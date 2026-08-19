@@ -494,9 +494,9 @@ const TRANSLATIONS = {
     'sec-dayshade': 'Daily Analysis',
     'sec-sun': 'Sun',
     'sec-legend': 'Legend',
-    'btn-export': '⬇ Export',
-    'btn-import': '⬆ Import',
-    'btn-reset': 'Reset',
+    'btn-export': 'Export',
+    'btn-import': 'Import',
+    'btn-reset': 'Clear all',
     'btn-play': '▶ Play Day',
     'btn-pause': '⏸ Pause',
     'btn-now': 'Now',
@@ -596,7 +596,7 @@ const TRANSLATIONS = {
     'footer-license': 'License Terms',
     'import-ok': 'Import loaded successfully.',
     'import-err': '⚠️ Import failed: ',
-    'reset-confirm': 'Reset everything to default?',
+    'reset-confirm': 'Clear everything (posts, sails, furniture, garden) and reset to defaults?',
     'hud-night': '· Night',
     'rot-ccw': 'counter-clockwise',
     'rot-cw': 'clockwise',
@@ -1074,6 +1074,8 @@ function sailSurface(s){
   return { lift, posts, pg, ys, ang, center, G };
 }
 function sailCorners(s){ const surf=sailSurface(s); return sailLocalCorners(s).map(v=>surf.lift(v.x,v.z)); }
+function attachmentOffset(pi){ const p=S.points[pi]; return (p.shackle?p.shackle.length:0)+(p.turnbuckle?p.turnbuckle.length:0); }
+function edgeSag(s,i,j){ const tension=(s.tension!=null?s.tension:0.05); return (attachmentOffset(s.posts[i])+tension+attachmentOffset(s.posts[j])+tension)*0.5; }
 
 function insetPoint(p,c,r){
   const dx=c.x-p.x, dz=c.z-p.z;
@@ -1147,25 +1149,39 @@ function buildPoles(){
 function buildSails(){
   ensureSailMeshes(S.sails.length);
   S.sails.forEach((s,si)=>{ const mesh=sailMeshes[si]; if(!s.on){ mesh.visible=false; return; } mesh.visible=true;
-    const surf=sailSurface(s); let pos;
-    if(s.shape===3){ const c=sailLocalCorners(s).map(v=>surf.lift(v.x,v.z));
-      pos=new Float32Array([c[0].x,c[0].y,c[0].z, c[1].x,c[1].y,c[1].z, c[2].x,c[2].y,c[2].z]); }
-    else if(s.shape==='custom'){
-      const c=sailLocalCorners(s).map(v=>surf.lift(v.x,v.z));
-      const tris=[]; for(let i=1;i<c.length-1;i++){ tris.push(c[0],c[i],c[i+1]); }
-      pos=new Float32Array(tris.length*3); tris.forEach((p,idx)=>{pos[idx*3]=p.x;pos[idx*3+1]=p.y;pos[idx*3+2]=p.z;}); }
-    else { const w=s.bw,l=s.bl,N=6,tris=[];
-      const P=(i,j)=>surf.lift(-w/2+w*i/N, -l/2+l*j/N);
-      for(let i=0;i<N;i++) for(let j=0;j<N;j++){ const a=P(i,j),b=P(i+1,j),cc=P(i+1,j+1),d=P(i,j+1);
-        tris.push(a,b,cc, a,cc,d); }
-      pos=new Float32Array(tris.length*3); tris.forEach((p,idx)=>{pos[idx*3]=p.x;pos[idx*3+1]=p.y;pos[idx*3+2]=p.z;}); }
+    const corners=sailCorners(s); const n=corners.length;
+    if(n<3 || (s.shape!=='custom' && n!==s.shape)){ mesh.visible=false; return; }
+    const sags=[]; for(let i=0;i<n;i++) sags.push(edgeSag(s,i,(i+1)%n));
+    const M=6;
+    const center=new THREE.Vector3(); corners.forEach(c=>center.add(c)); center.divideScalar(n);
+    const avgSag=sags.reduce((a,v)=>a+v,0)/sags.length; center.y-=avgSag;
+    const tris=[];
+    for(let i=0;i<n;i++){
+      const A=corners[i], B=corners[(i+1)%n]; const sag=sags[i];
+      const edgePts=[];
+      for(let k=0;k<=M;k++){ const t=k/M; const p=new THREE.Vector3().lerpVectors(A,B,t); p.y-=4*sag*t*(1-t); edgePts.push(p); }
+      for(let k=0;k<M;k++) tris.push(center, edgePts[k], edgePts[k+1]);
+    }
+    const pos=new Float32Array(tris.length*3);
+    tris.forEach((p,idx)=>{ pos[idx*3]=p.x; pos[idx*3+1]=p.y; pos[idx*3+2]=p.z; });
     const g=mesh.geometry; g.setAttribute('position',new THREE.BufferAttribute(pos,3)); g.computeVertexNormals(); g.computeBoundingSphere();
-    mesh.material.color.set(s.color); mesh.material.opacity=s.opacity;
+    mesh.material.color.set(s.color); mesh.material.opacity=s.opacity; mesh.renderOrder=10;
   });
 }
 function buildRopes(){
-  ropesGroup.clear(); const mat=new THREE.LineBasicMaterial({color:0x2a2f36});
-  S.sails.forEach(s=>{ if(!s.on||s.shape==='custom'&&s.posts.length===0) return; const c=sailCorners(s); c.forEach((corner,k)=>{ const top=poleTop(s.posts[k]); ropesGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([corner,top]),mat)); }); });
+  ropesGroup.clear();
+  const ropeMat=new THREE.LineBasicMaterial({color:0x2a2f36});
+  const dashMat=new THREE.LineDashedMaterial({color:0x111111, dashSize:0.15, gapSize:0.08, depthWrite:false,depthTest:false});
+  S.sails.forEach(s=>{
+    if(!s.on) return;
+    if(s.shape==='custom'&&s.posts.length===0) return;
+    const c=sailCorners(s); const n=c.length;
+    for(let k=0;k<n;k++) ropesGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([c[k],poleTop(s.posts[k])]),ropeMat));
+    for(let k=0;k<n;k++){
+      const g=new THREE.BufferGeometry().setFromPoints([c[k],c[(k+1)%n]]);
+      const line=new THREE.Line(g,dashMat); line.computeLineDistances(); line.renderOrder=14; ropesGroup.add(line);
+    }
+  });
 }
 function makeTable(f){ const tw=f.tw||1.1,tl=f.tl||0.7,ht=f.th||0.74; const g=new THREE.Group(); const wood=new THREE.MeshStandardMaterial({color:0x9c6b3f,roughness:0.8});
   const ox=tw/2, oz=tl/2;
@@ -2371,6 +2387,20 @@ function removeSail(i){
   buildSailEditors(); updateAll(); touch();
 }
 function rotateSail(s,dir){ if(dir>0) s.posts.unshift(s.posts.pop()); else s.posts.push(s.posts.shift()); }
+function shiftSailGroup(si,opts){
+  const s=S.sails[si]; if(!s || s.shape!=='custom') return;
+  const idxs=s.posts.filter(i=>i>=0 && i<S.points.length);
+  if(idxs.length===0) return;
+  const ps=idxs.map(i=>S.points[i]);
+  if(opts.x||opts.y){ const dx=opts.x||0, dy=opts.y||0; ps.forEach(p=>{ p.x+=dx; p.y+=dy; }); }
+  if(opts.rot){
+    const cx=ps.reduce((a,p)=>a+p.x,0)/ps.length;
+    const cy=ps.reduce((a,p)=>a+p.y,0)/ps.length;
+    const rad=opts.rot*Math.PI/180; const ca=Math.cos(rad), sa=Math.sin(rad);
+    ps.forEach(p=>{ const dx=p.x-cx, dy=p.y-cy; p.x=cx+dx*ca-dy*sa; p.y=cy+dx*sa+dy*ca; });
+  }
+  buildPointEditors(); updateAll(); touch();
+}
 function buildSailEditors(){
   const host=$('sails'); host.innerHTML='';
   S.sails.forEach((s,si)=>{
@@ -2677,6 +2707,10 @@ function placeMeasureInDesign(){
   ms.points.forEach(mp=>{
     S.points.push({x:mp.offsetX, y:mp.offsetY, h:mp.height, shackle:findHardware('shackles',mp.shackle.type), turnbuckle:findHardware('turnbuckles',mp.turnbuckle.type)});
   });
+  // centre the measured assembly in the garden so it isn't placed relative to the reference corner
+  const cx=S.points.slice(startIdx).reduce((a,p)=>a+p.x,0)/n;
+  const cy=S.points.slice(startIdx).reduce((a,p)=>a+p.y,0)/n;
+  S.points.slice(startIdx).forEach(p=>{ p.x-=cx; p.y-=cy; });
   const avgTension=ms.points.reduce((s,p)=>s+p.tension,0)/n;
   S.sails.push({on:true, shape:'custom', vertices:res.pts.map(p=>({x:p.x,z:p.z})), posts:S.points.map((_,i)=>i).slice(startIdx,startIdx+n), color:ms.colour, material:ms.material, notes:ms.notes, opacity:0.6, dx:0, dz:0, rot:0, tension:avgTension});
   setPanelTab('design');
@@ -2696,7 +2730,13 @@ $('btnImport').onclick=()=>$('fileImport').click();
 $('fileImport').onchange=e=>{ const file=e.target.files[0]; if(!file) return; const r=new FileReader();
   r.onload=()=>{ try{ const obj=JSON.parse(r.result); S=migrate(obj)||defaultState(); refreshUI(); saveState(); snapshot(); $('saveState').textContent=t('import-ok'); }catch(err){ $('saveState').textContent=t('import-err')+err.message; } };
   r.readAsText(file); e.target.value=''; };
-$('btnReset').onclick=()=>{ if(confirm(t('reset-confirm'))){ S=defaultState(); refreshUI(); saveState(); snapshot(); } };
+function clearAll(){
+  if(!confirm(t('reset-confirm'))) return;
+  const d=defaultState();
+  S=Object.assign({},d,{points:[],sails:[],furniture:{},person:{on:false,x:0,y:-3,h:1.9},evalRect:{on:false,x0:-2,y0:-2,x1:2,y1:2},measure:d.measure,ref:d.ref,garden:d.garden});
+  refreshUI(); saveState(); snapshot();
+}
+$('btnReset').onclick=clearAll;
 
 function refreshUI(){ applyTranslations(); wireStaticUI(); syncEvalRectInputs(); buildPointEditors(); buildSailEditors(); buildFurnitureEditors(); buildPersonEditor(); buildGarden(); updateAll(); }
 
